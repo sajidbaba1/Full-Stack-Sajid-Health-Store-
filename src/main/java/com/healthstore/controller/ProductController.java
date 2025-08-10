@@ -66,4 +66,41 @@ public class ProductController {
         return product.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
                       .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
+
+    /**
+     * Endpoint to update an existing product.
+     * This endpoint is only accessible to users with 'ROLE_SELLER' or 'ROLE_ADMIN'.
+     * @param id The ID of the product to update.
+     * @param productDTO The updated product data.
+     * @return A response entity with the updated product or an error status.
+     */
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateProduct(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductDTO productDTO) {
+        try {
+            Product updatedProduct = productService.updateProduct(id, productDTO);
+            return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Endpoint to delete a product by its ID.
+     * This endpoint is only accessible to users with 'ROLE_SELLER' or 'ROLE_ADMIN'.
+     * @param id The ID of the product to delete.
+     * @return A response entity with a success message or an error status.
+     */
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteProduct(@PathVariable Long id) {
+        try {
+            productService.deleteProduct(id);
+            return new ResponseEntity<>("Product deleted successfully", HttpStatus.NO_CONTENT);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        }
+    }
 }

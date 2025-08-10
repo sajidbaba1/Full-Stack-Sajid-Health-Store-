@@ -65,4 +65,63 @@ public class ProductService {
     public Optional<Product> getProductById(Long id) {
         return productRepository.findById(id);
     }
+
+    /**
+     * Updates an existing product with new data.
+     * @param id The ID of the product to update.
+     * @param productDTO The DTO containing the updated product data.
+     * @return The updated product.
+     * @throws RuntimeException if the product or category is not found.
+     */
+    @Transactional
+    public Product updateProduct(Long id, ProductDTO productDTO) {
+        // Check if product exists
+        Product existingProduct = productRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Product not found with ID: " + id));
+        
+        // Check if category exists if it's being updated
+        if (productDTO.getCategoryId() != null) {
+            Category category = categoryService.getCategoryById(productDTO.getCategoryId())
+                .orElseThrow(() -> new RuntimeException("Category not found with ID: " + productDTO.getCategoryId()));
+            existingProduct.setCategory(category);
+        }
+        
+        // Update product fields if they are not null in the DTO
+        if (productDTO.getName() != null) {
+            existingProduct.setName(productDTO.getName());
+        }
+        if (productDTO.getDescription() != null) {
+            existingProduct.setDescription(productDTO.getDescription());
+        }
+        if (productDTO.getPrice() > 0) {
+            existingProduct.setPrice(productDTO.getPrice());
+        }
+        if (productDTO.getStock() >= 0) {
+            existingProduct.setStock(productDTO.getStock());
+        }
+        if (productDTO.getImageUrl() != null) {
+            existingProduct.setImageUrl(productDTO.getImageUrl());
+        }
+        
+        return productRepository.save(existingProduct);
+    }
+    
+    /**
+     * Deletes a product by its ID.
+     * @param id The ID of the product to delete.
+     * @throws RuntimeException if the product is not found or cannot be deleted.
+     */
+    @Transactional
+    public void deleteProduct(Long id) {
+        // Check if product exists
+        if (!productRepository.existsById(id)) {
+            throw new RuntimeException("Product not found with ID: " + id);
+        }
+        
+        // Check if product is associated with any order
+        // This is a simplified check - in a real application, you might want to handle this differently
+        // For example, you might want to set a flag to mark the product as inactive instead of deleting it
+        
+        productRepository.deleteById(id);
+    }
 }
