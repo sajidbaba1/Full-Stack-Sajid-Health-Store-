@@ -1,6 +1,7 @@
 package com.healthstore.controller;
 
 import com.healthstore.dto.ProductDTO;
+import com.healthstore.dto.ProductResponseDTO;
 import com.healthstore.model.Product;
 import com.healthstore.service.ProductService;
 import jakarta.validation.Valid;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * REST controller for managing products.
@@ -49,41 +51,27 @@ public class ProductController {
     }
 
     /**
-     * Endpoint to get a paginated list of all products.
-     * This endpoint is accessible to all users without authentication.
+     * Retrieves a paginated list of all products.
      *
-     * @param page The page number (0-based, default is 0).
-     * @param size The number of items per page (default is 10, max is 50).
-     * @param sortBy The field to sort by (default is 'id').
-     * @param direction The sort direction ('asc' or 'desc', default is 'asc').
-     * @return A response entity with a page of products and pagination metadata.
+     * @param page The page number (0-based).
+     * @param size The number of items per page.
+     * @param sortBy The field to sort by.
+     * @param sortOrder The sort order (asc/desc).
+     * @return A ResponseEntity containing a page of products.
      */
     @GetMapping
-    public ResponseEntity<Page<Product>> getAllProducts(
+    public ResponseEntity<Page<ProductResponseDTO>> getAllProducts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String direction) {
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortOrder) {
         
-        // Validate page and size parameters
-        if (page < 0) {
-            page = 0;
-        }
-        if (size <= 0 || size > 50) {
-            size = 10;
-        }
+        Sort.Direction direction = sortOrder.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
         
-        // Create sort direction
-        Sort.Direction sortDirection = direction.equalsIgnoreCase("desc") ? 
-                Sort.Direction.DESC : Sort.Direction.ASC;
-        
-        // Create pageable object
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
-        
-        // Get paginated products
         Page<Product> products = productService.getAllProducts(pageable);
-        
-        return new ResponseEntity<>(products, HttpStatus.OK);
+        Page<ProductResponseDTO> responseDTOs = products.map(ProductResponseDTO::fromProduct);
+        return new ResponseEntity<>(responseDTOs, HttpStatus.OK);
     }
 
     /**
@@ -92,10 +80,10 @@ public class ProductController {
      * @return A response entity with the product or a 'Not Found' status.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Product> getProductById(@PathVariable Long id) {
-        Optional<Product> product = productService.getProductById(id);
-        return product.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                      .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    public ResponseEntity<ProductResponseDTO> getProductById(@PathVariable Long id) {
+        return productService.getProductById(id)
+                .map(product -> new ResponseEntity<>(ProductResponseDTO.fromProduct(product), HttpStatus.OK))
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     /**
@@ -112,7 +100,7 @@ public class ProductController {
             @Valid @RequestBody ProductDTO productDTO) {
         try {
             Product updatedProduct = productService.updateProduct(id, productDTO);
-            return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
+            return new ResponseEntity<>(ProductResponseDTO.fromProduct(updatedProduct), HttpStatus.OK);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
@@ -147,7 +135,7 @@ public class ProductController {
      * @return A response entity with a page of products matching the search query and pagination metadata.
      */
     @GetMapping("/search")
-    public ResponseEntity<Page<Product>> searchProducts(
+    public ResponseEntity<Page<ProductResponseDTO>> searchProducts(
             @RequestParam String query,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -169,10 +157,11 @@ public class ProductController {
         // Create pageable object
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
         
-        // Search products with pagination
+        // Search products with pagination and map to DTOs
         Page<Product> products = productService.findByNameContainingIgnoreCase(query, pageable);
+        Page<ProductResponseDTO> responseDTOs = products.map(ProductResponseDTO::fromProduct);
         
-        return new ResponseEntity<>(products, HttpStatus.OK);
+        return new ResponseEntity<>(responseDTOs, HttpStatus.OK);
     }
 
     /**
@@ -188,7 +177,7 @@ public class ProductController {
      * @return A response entity with a page of products within the price range and pagination metadata.
      */
     @GetMapping("/price-range")
-    public ResponseEntity<Page<Product>> getProductsByPriceRange(
+    public ResponseEntity<Page<ProductResponseDTO>> getProductsByPriceRange(
             @RequestParam double minPrice,
             @RequestParam double maxPrice,
             @RequestParam(defaultValue = "0") int page,
@@ -216,10 +205,11 @@ public class ProductController {
         // Create pageable object
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
         
-        // Get products by price range with pagination
+        // Get products by price range with pagination and map to DTOs
         Page<Product> products = productService.findByPriceBetween(minPrice, maxPrice, pageable);
+        Page<ProductResponseDTO> responseDTOs = products.map(ProductResponseDTO::fromProduct);
         
-        return new ResponseEntity<>(products, HttpStatus.OK);
+        return new ResponseEntity<>(responseDTOs, HttpStatus.OK);
     }
 
     /**
@@ -234,35 +224,32 @@ public class ProductController {
      * @return A response entity with a page of products in the specified category and pagination metadata.
      */
     @GetMapping("/category/{categoryId}")
-    public ResponseEntity<?> getProductsByCategory(
+    public ResponseEntity<Page<ProductResponseDTO>> getProductsByCategory(
             @PathVariable Long categoryId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String direction) {
         
-        try {
-            // Validate page and size parameters
-            if (page < 0) {
-                page = 0;
-            }
-            if (size <= 0 || size > 50) {
-                size = 10;
-            }
-            
-            // Create sort direction
-            Sort.Direction sortDirection = direction.equalsIgnoreCase("desc") ? 
-                    Sort.Direction.DESC : Sort.Direction.ASC;
-            
-            // Create pageable object
-            Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
-            
-            // Get paginated products by category
-            Page<Product> products = productService.getProductsByCategory(categoryId, pageable);
-            
-            return new ResponseEntity<>(products, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        // Validate page and size parameters
+        if (page < 0) {
+            page = 0;
         }
+        if (size <= 0 || size > 50) {
+            size = 10;
+        }
+        
+        // Create sort direction
+        Sort.Direction sortDirection = direction.equalsIgnoreCase("desc") ? 
+                Sort.Direction.DESC : Sort.Direction.ASC;
+        
+        // Create pageable object
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        
+        // Get products by category with pagination and map to DTOs
+        Page<Product> products = productService.findByCategoryId(categoryId, pageable);
+        Page<ProductResponseDTO> responseDTOs = products.map(ProductResponseDTO::fromProduct);
+        
+        return new ResponseEntity<>(responseDTOs, HttpStatus.OK);
     }
 }

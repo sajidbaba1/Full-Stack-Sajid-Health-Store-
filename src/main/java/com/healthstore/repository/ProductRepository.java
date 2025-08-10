@@ -18,6 +18,53 @@ import java.util.List;
 public interface ProductRepository extends JpaRepository<Product, Long> {
     
     /**
+     * Finds products by name containing the given string (case-insensitive) and category ID
+     * @param name The name to search for (partial match)
+     * @param categoryId The category ID to filter by
+     * @return List of matching products
+     */
+    List<Product> findByNameContainingIgnoreCaseAndCategoryId(String name, Long categoryId);
+    
+    /**
+     * Finds products by name containing the given string (case-insensitive)
+     * @param name The name to search for (partial match)
+     * @return List of matching products
+     */
+    List<Product> findByNameContainingIgnoreCase(String name);
+    
+    /**
+     * Finds products by category ID
+     * @param categoryId The category ID to filter by
+     * @return List of products in the specified category
+     */
+    List<Product> findByCategoryId(Long categoryId);
+    
+    /**
+     * Finds products by name containing the given string (case-insensitive) and category ID with pagination
+     * @param name The name to search for (partial match)
+     * @param categoryId The category ID to filter by
+     * @param pageable Pagination information
+     * @return Page of matching products
+     */
+    Page<Product> findByNameContainingIgnoreCaseAndCategoryId(String name, Long categoryId, Pageable pageable);
+    
+    /**
+     * Finds products by name containing the given string (case-insensitive) with pagination
+     * @param name The name to search for (partial match)
+     * @param pageable Pagination information
+     * @return Page of matching products
+     */
+    Page<Product> findByNameContainingIgnoreCase(String name, Pageable pageable);
+    
+    /**
+     * Finds products by category ID with pagination
+     * @param categoryId The category ID to filter by
+     * @param pageable Pagination information
+     * @return Page of products in the specified category
+     */
+    Page<Product> findByCategoryId(Long categoryId, Pageable pageable);
+    
+    /**
      * Finds products by category ID with pagination.
      *
      * @param categoryId The ID of the category.

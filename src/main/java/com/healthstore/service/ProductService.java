@@ -4,11 +4,11 @@ import com.healthstore.dto.ProductDTO;
 import com.healthstore.model.Category;
 import com.healthstore.model.Product;
 import com.healthstore.repository.ProductRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 
@@ -140,13 +140,91 @@ public class ProductService {
     }
     
     /**
-     * Saves a product to the database.
-     * Can be used to create a new product or update an existing one.
-     * @param product The product to save.
+     * Saves a new product to the database.
+     *
+     * @param product The product to be saved.
      * @return The saved product.
      */
-    @Transactional
     public Product save(Product product) {
         return productRepository.save(product);
+    }
+    
+    /**
+     * Searches and filters products based on name and category ID.
+     * @param name The product name to search for (can be null or empty).
+     * @param categoryId The category ID to filter by (can be null).
+     * @return A list of products matching the criteria.
+     */
+    public List<Product> searchProducts(String name, Long categoryId) {
+        if (name != null && !name.isEmpty() && categoryId != null) {
+            return productRepository.findByNameContainingIgnoreCaseAndCategoryId(name, categoryId);
+        } else if (name != null && !name.isEmpty()) {
+            return productRepository.findByNameContainingIgnoreCase(name);
+        } else if (categoryId != null) {
+            return productRepository.findByCategoryId(categoryId);
+        } else {
+            return productRepository.findAll();
+        }
+    }
+    
+    /**
+     * Searches and filters products with pagination support.
+     * @param name The product name to search for (can be null or empty).
+     * @param categoryId The category ID to filter by (can be null).
+     * @param pageable Pagination information.
+     * @return A page of products matching the criteria.
+     */
+    public Page<Product> searchProducts(String name, Long categoryId, Pageable pageable) {
+        if (name != null && !name.isEmpty() && categoryId != null) {
+            return productRepository.findByNameContainingIgnoreCaseAndCategoryId(name, categoryId, pageable);
+        } else if (name != null && !name.isEmpty()) {
+            return productRepository.findByNameContainingIgnoreCase(name, pageable);
+        } else if (categoryId != null) {
+            return productRepository.findByCategoryId(categoryId, pageable);
+        } else {
+            return productRepository.findAll(pageable);
+        }
+    }
+    
+    /**
+     * Retrieves products that belong to a specific category with pagination support.
+     *
+     * @param categoryId The ID of the category.
+     * @param pageable The pagination information.
+     * @return A page of products in the specified category.
+     * @throws RuntimeException if the category is not found.
+     */
+    public Page<Product> getProductsByCategory(Long categoryId, Pageable pageable) {
+        if (!categoryService.existsById(categoryId)) {
+            throw new RuntimeException("Category not found with ID: " + categoryId);
+        }
+        return productRepository.findByCategoryId(categoryId, pageable);
+    }
+    
+    /**
+     * Finds products by name containing the given string (case-insensitive) with pagination.
+     *
+     * @param name The string to search for in product names.
+     * @param pageable The pagination information.
+     * @return A page of products matching the search criteria.
+     */
+    public Page<Product> findByNameContainingIgnoreCase(String name, Pageable pageable) {
+        return productRepository.findByNameContainingIgnoreCase(name, pageable);
+    }
+    
+    /**
+     * Finds products within a specified price range with pagination.
+     *
+     * @param minPrice The minimum price (inclusive).
+     * @param maxPrice The maximum price (inclusive).
+     * @param pageable The pagination information.
+     * @return A page of products within the specified price range.
+     * @throws IllegalArgumentException if the price range is invalid.
+     */
+    public Page<Product> findByPriceBetween(double minPrice, double maxPrice, Pageable pageable) {
+        if (minPrice < 0 || maxPrice < 0 || minPrice > maxPrice) {
+            throw new IllegalArgumentException("Invalid price range: [" + minPrice + ", " + maxPrice + "]");
+        }
+        return productRepository.findByPriceBetween(minPrice, maxPrice, pageable);
     }
 }
