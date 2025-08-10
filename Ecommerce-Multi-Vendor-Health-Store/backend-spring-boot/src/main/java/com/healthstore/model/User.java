@@ -5,7 +5,9 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * The User entity represents a user in the e-commerce application.
@@ -37,11 +39,13 @@ public class User {
     private String password;
     private String mobile;
 
-    /**
-     * The roles of the user, e.g., 'ROLE_USER', 'ROLE_SELLER', 'ROLE_ADMIN'.
-     * This is used by Spring Security for authorization.
-     */
-    private String role;
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinTable(
+        name = "user_roles",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
 
     /**
      * The date and time the user account was created.

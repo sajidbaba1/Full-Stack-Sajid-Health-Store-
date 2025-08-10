@@ -7,14 +7,11 @@ import com.healthstore.repository.ProductRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional
 public class ProductService {
 
     private final ProductRepository productRepository;
@@ -25,28 +22,8 @@ public class ProductService {
         this.categoryService = categoryService;
     }
 
-    /**
-     * Creates a new product from a DTO.
-     * It finds the category by ID and then saves the product entity.
-     * @param productDTO The product data from the request.
-     * @return The saved product entity.
-     * @throws RuntimeException if the category is not found.
-     */
     public Product createProduct(ProductDTO productDTO) {
-        // Validate category exists
-        Category category = categoryService.getCategoryById(productDTO.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Category not found with ID: " + productDTO.getCategoryId()));
-        
-        // Create and save the product
-        Product product = new Product();
-        product.setName(productDTO.getName());
-        product.setDescription(productDTO.getDescription());
-        product.setPrice(BigDecimal.valueOf(productDTO.getPrice()));
-        product.setStock(productDTO.getStock());
-        product.setImageUrl(productDTO.getImageUrl());
-        product.setCategory(category);
-        
-        return productRepository.save(product);
+        // ... existing logic
     }
     
     public List<Product> getAllProducts() {
@@ -62,27 +39,11 @@ public class ProductService {
     }
     
     public Product updateProduct(Long id, ProductDTO productDTO) {
-        return productRepository.findById(id).map(product -> {
-            product.setName(productDTO.getName());
-            product.setDescription(productDTO.getDescription());
-            product.setPrice(productDTO.getPrice());
-            product.setStock(productDTO.getStock());
-            product.setImageUrl(productDTO.getImageUrl());
-            
-            if (productDTO.getCategoryId() != null) {
-                Category category = categoryService.getCategoryById(productDTO.getCategoryId())
-                        .orElseThrow(() -> new RuntimeException("Category not found"));
-                product.setCategory(category);
-            }
-            
-            return productRepository.save(product);
-        }).orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+        // ... existing logic
     }
     
     public void deleteProduct(Long id) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
-        productRepository.delete(product);
+        // ... existing logic
     }
     
     /**

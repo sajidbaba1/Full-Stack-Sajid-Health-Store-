@@ -50,8 +50,40 @@ public class SecurityConfig {
         http
             .csrf(AbstractHttpConfigurer::disable) // Disable CSRF as JWT is stateless
             .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers("/auth/**").permitAll() // Public endpoints for authentication
-                .anyRequest().authenticated() // All other requests require authentication
+                // Public endpoints
+                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/api/products/**").permitAll()
+                .requestMatchers("/api/categories/**").permitAll()
+                .requestMatchers("/uploads/**").permitAll()
+                
+                // User and cart endpoints
+                .requestMatchers("/api/cart/**").hasAnyAuthority("USER", "ADMIN")
+                
+                // Order endpoints
+                .requestMatchers("/api/orders/**").hasAnyAuthority("USER", "ADMIN", "SHIPPING_MANAGER")
+                
+                // User profile endpoints
+                .requestMatchers("/api/users/profile").authenticated()
+                .requestMatchers("/api/users/password").authenticated()
+                
+                // Review and rating endpoints
+                .requestMatchers("/api/reviews/**").hasAnyAuthority("USER", "ADMIN")
+                .requestMatchers("/api/ratings/**").hasAnyAuthority("USER", "ADMIN")
+                
+                // Address endpoints
+                .requestMatchers("/api/addresses/**").hasAnyAuthority("USER", "ADMIN")
+                
+                // File upload endpoints
+                .requestMatchers("/api/files/**").hasAnyAuthority("ADMIN", "PRODUCT_MANAGER", "CONTENT_MANAGER")
+                
+                // Admin endpoints
+                .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                
+                // Admin product management endpoints
+                .requestMatchers("/api/admin/products/**").hasAnyAuthority("ADMIN", "PRODUCT_MANAGER")
+                
+                // All other requests require authentication
+                .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Make sessions stateless

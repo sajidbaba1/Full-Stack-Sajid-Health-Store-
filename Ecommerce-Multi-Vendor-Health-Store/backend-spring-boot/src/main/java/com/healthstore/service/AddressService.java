@@ -24,6 +24,17 @@ public class AddressService {
     }
 
     /**
+     * Saves an address for a specific user.
+     * @param user The user to associate with the address.
+     * @param address The address to save.
+     * @return The saved address.
+     */
+    public Address saveAddress(User user, Address address) {
+        address.setUser(user);
+        return addressRepository.save(address);
+    }
+    
+    /**
      * Saves an address to the database.
      * @param address The address to save.
      * @return The saved address.
@@ -48,6 +59,15 @@ public class AddressService {
      */
     public List<Address> getUserAddresses(Long userId) {
         return addressRepository.findByUserId(userId);
+    }
+    
+    /**
+     * Gets all addresses for a specific user.
+     * @param user The user whose addresses to retrieve.
+     * @return A list of the user's addresses.
+     */
+    public List<Address> getAddressesByUser(User user) {
+        return addressRepository.findByUser(user);
     }
 
     /**
@@ -99,5 +119,19 @@ public class AddressService {
      */
     public void deleteAddress(Long id) {
         addressRepository.deleteById(id);
+    }
+    
+    /**
+     * Deletes an address for a specific user.
+     * @param user The user who owns the address.
+     * @param addressId The ID of the address to delete.
+     */
+    public void deleteAddress(User user, Long addressId) {
+        Optional<Address> address = addressRepository.findById(addressId);
+        address.ifPresent(a -> {
+            if (a.getUser().getId().equals(user.getId())) {
+                addressRepository.delete(a);
+            }
+        });
     }
 }
