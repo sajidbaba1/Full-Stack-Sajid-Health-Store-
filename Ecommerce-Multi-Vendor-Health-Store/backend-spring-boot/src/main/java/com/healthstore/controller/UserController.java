@@ -1,5 +1,6 @@
 package com.healthstore.controller;
 
+import com.healthstore.dto.PasswordUpdateDTO;
 import com.healthstore.dto.UserUpdateDTO;
 import com.healthstore.model.User;
 import com.healthstore.service.UserService;
@@ -50,6 +51,28 @@ public class UserController {
         try {
             User updatedUser = userService.updateUserProfile(userDetails.getUsername(), userUpdateDTO);
             return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+    
+    /**
+     * Endpoint to update the password of the authenticated user.
+     * @param userDetails The details of the authenticated user.
+     * @param passwordUpdateDTO The DTO containing the current and new password.
+     * @return A response entity with a success message or an error.
+     */
+    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/password")
+    public ResponseEntity<?> updatePassword(@AuthenticationPrincipal UserDetails userDetails,
+                                          @Valid @RequestBody PasswordUpdateDTO passwordUpdateDTO) {
+        try {
+            userService.updateUserPassword(
+                userDetails.getUsername(),
+                passwordUpdateDTO.getCurrentPassword(),
+                passwordUpdateDTO.getNewPassword()
+            );
+            return new ResponseEntity<>("Password updated successfully", HttpStatus.OK);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
