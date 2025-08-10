@@ -2,6 +2,7 @@ package com.healthstore.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.envers.Audited;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,6 +13,7 @@ import java.util.List;
 @Entity
 @Table(name = "categories")
 @Data
+@Audited
 public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

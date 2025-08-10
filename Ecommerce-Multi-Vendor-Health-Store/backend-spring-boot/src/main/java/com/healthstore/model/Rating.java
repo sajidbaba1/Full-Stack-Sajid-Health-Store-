@@ -2,6 +2,7 @@ package com.healthstore.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.envers.Audited;
 
 /**
  * The Rating entity represents a user's rating of a product.
@@ -10,6 +11,7 @@ import lombok.Data;
 @Entity
 @Table(name = "ratings")
 @Data
+@Audited
 public class Rating {
 
     @Id

@@ -2,6 +2,7 @@ package com.healthstore.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.envers.Audited;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import java.util.Set;
 @Entity
 @Table(name = "users")
 @Data
+@Audited
 public class User {
 
     /**

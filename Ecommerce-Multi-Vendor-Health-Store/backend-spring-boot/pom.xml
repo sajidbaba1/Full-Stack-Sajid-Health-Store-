@@ -95,6 +95,12 @@
             <scope>test</scope>
         </dependency>
         
+        <!-- Spring WebFlux for reactive web support -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+        
         <!-- JWT Dependencies -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -125,7 +131,7 @@
         <dependency>
             <groupId>com.stripe</groupId>
             <artifactId>stripe-java</artifactId>
-            <version>22.14.0</version>
+            <version>24.3.0</version>
         </dependency>
     </dependencies>
     

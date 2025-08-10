@@ -2,6 +2,7 @@ package com.healthstore.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.envers.Audited;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.List;
 @Entity
 @Table(name = "reviews")
 @Data
+@Audited
 public class Review {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

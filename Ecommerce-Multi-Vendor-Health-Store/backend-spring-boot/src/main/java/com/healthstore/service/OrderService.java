@@ -101,11 +101,12 @@ public class OrderService {
     /**
      * Finds all orders for a specific user.
      * @param user The user whose orders to find.
-     * @return A list of orders.
+     * @param pageable The pagination information.
+     * @return A page of orders.
      */
     @Transactional(readOnly = true)
-    public List<Order> getUserOrders(User user) {
-        return orderRepository.findByUserId(user.getId());
+    public Page<Order> getOrdersByUser(User user, Pageable pageable) {
+        return orderRepository.findByUserId(user.getId(), pageable);
     }
 
     /**

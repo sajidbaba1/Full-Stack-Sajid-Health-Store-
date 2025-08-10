@@ -11,6 +11,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 import java.util.Optional;
 
@@ -19,9 +22,30 @@ import java.util.Optional;
 public class UserController {
 
     private final UserService userService;
+    private final OrderService orderService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, OrderService orderService) {
         this.userService = userService;
+        this.orderService = orderService;
+    }
+
+    /**
+     * Get paginated orders for the authenticated user.
+     * @param userDetails The authenticated user details
+     * @param pageable The pagination information
+     * @return A page of orders for the user
+     */
+    @GetMapping("/orders")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Page<Order>> getUserOrders(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PageableDefault(size = 10) Pageable pageable) {
+        
+        User user = userService.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+                
+        Page<Order> orders = orderService.getOrdersByUser(user, pageable);
+        return ResponseEntity.ok(orders);
     }
 
     /**

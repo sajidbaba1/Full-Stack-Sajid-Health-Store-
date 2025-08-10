@@ -2,6 +2,7 @@ package com.healthstore.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.envers.Audited;
 import java.math.BigDecimal;
 
 /**
@@ -11,6 +12,7 @@ import java.math.BigDecimal;
 @Entity
 @Table(name = "order_items")
 @Data
+@Audited
 public class OrderItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

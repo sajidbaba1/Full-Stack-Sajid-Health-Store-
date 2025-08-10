@@ -3,6 +3,7 @@ package com.healthstore.controller;
 import com.healthstore.dto.ProductDTO;
 import com.healthstore.dto.ProductResponseDTO;
 import com.healthstore.model.Product;
+import com.healthstore.dto.SearchFilterDTO;
 import com.healthstore.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -40,16 +41,16 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductResponseDTO>> getAllProducts() {
-        List<Product> products = productService.getAllProducts();
-        List<ProductResponseDTO> dtos = products.stream()
-                .map(this::convertToProductResponseDTO)
-                .collect(Collectors.toList());
-        return new ResponseEntity<>(dtos, HttpStatus.OK);
+    public ResponseEntity<Page<ProductResponseDTO>> getAllProducts(
+            @PageableDefault(size = 10) Pageable pageable) {
+        Page<Product> products = productService.getAllProducts(pageable);
+        Page<ProductResponseDTO> productDTOs = products.map(ProductResponseDTO::new);
+        return new ResponseEntity<>(productDTOs, HttpStatus.OK);
     }
 
     @GetMapping("/page")
-    public ResponseEntity<Page<ProductResponseDTO>> getAllProducts(@PageableDefault(size = 10) Pageable pageable) {
+    public ResponseEntity<Page<ProductResponseDTO>> getProductsPage(
+            @PageableDefault(size = 10) Pageable pageable) {
         Page<Product> products = productService.getAllProducts(pageable);
         Page<ProductResponseDTO> dtoPage = products.map(this::convertToProductResponseDTO);
         return new ResponseEntity<>(dtoPage, HttpStatus.OK);

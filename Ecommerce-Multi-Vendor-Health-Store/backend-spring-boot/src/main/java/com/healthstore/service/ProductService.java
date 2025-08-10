@@ -4,6 +4,8 @@ import com.healthstore.dto.ProductDTO;
 import com.healthstore.model.Category;
 import com.healthstore.model.Product;
 import com.healthstore.repository.ProductRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,26 +24,36 @@ public class ProductService {
         this.categoryService = categoryService;
     }
 
+    @CacheEvict(value = "products", allEntries = true)
     public Product createProduct(ProductDTO productDTO) {
         // ... existing logic
     }
     
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
-    }
-
+    @Cacheable(value = "products", key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort")
     public Page<Product> getAllProducts(Pageable pageable) {
         return productRepository.findAll(pageable);
+    }
+    
+    /**
+     * Find products based on the provided filters with pagination.
+     * @param filters The search filters
+     * @param pageable The pagination information
+     * @return A page of filtered products
+     */
+    public Page<Product> findWithFilters(SearchFilterDTO filters, Pageable pageable) {
+        return productRepository.findAll(ProductSpecification.filterBy(filters), pageable);
     }
 
     public Optional<Product> getProductById(Long id) {
         return productRepository.findById(id);
     }
     
+    @CacheEvict(value = "products", allEntries = true)
     public Product updateProduct(Long id, ProductDTO productDTO) {
         // ... existing logic
     }
     
+    @CacheEvict(value = "products", allEntries = true)
     public void deleteProduct(Long id) {
         // ... existing logic
     }
