@@ -5,6 +5,7 @@ import com.healthstore.model.Category;
 import com.healthstore.model.Product;
 import com.healthstore.repository.ProductRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
