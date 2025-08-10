@@ -76,4 +76,25 @@ public class UserService {
     public boolean userExists(String email) {
         return userRepository.existsByEmail(email);
     }
+
+    /**
+     * Updates a user's profile information.
+     * @param email The email of the user to update.
+     * @param userUpdateDTO The DTO with the new profile data.
+     * @return The updated user entity.
+     * @throws RuntimeException if the user is not found.
+     */
+    public User updateUserProfile(String email, UserUpdateDTO userUpdateDTO) {
+        Optional<User> optionalUser = userRepository.findByEmail(email);
+        if (optionalUser.isEmpty()) {
+            throw new RuntimeException("User not found with email: " + email);
+        }
+
+        User user = optionalUser.get();
+        user.setFirstName(userUpdateDTO.getFirstName());
+        user.setLastName(userUpdateDTO.getLastName());
+        user.setMobile(userUpdateDTO.getMobile());
+
+        return userRepository.save(user);
+    }
 }
