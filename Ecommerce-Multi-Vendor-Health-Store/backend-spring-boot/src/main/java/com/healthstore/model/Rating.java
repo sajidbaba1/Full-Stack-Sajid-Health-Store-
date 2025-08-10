@@ -1,7 +1,10 @@
 package com.healthstore.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.envers.Audited;
 
 /**
@@ -10,7 +13,8 @@ import org.hibernate.envers.Audited;
  */
 @Entity
 @Table(name = "ratings")
-@Data
+@Getter
+@Setter
 @Audited
 public class Rating {
 
@@ -18,13 +22,16 @@ public class Rating {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private int ratingValue;
+    @Column(nullable = false)
+    @Min(1)
+    @Max(5)
+    private int value; // Rating from 1 to 5
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 }

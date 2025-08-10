@@ -1,11 +1,13 @@
 package com.healthstore.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalDouble;
 
 /**
  * The Product entity represents a product in the e-commerce store.
@@ -47,8 +49,16 @@ public class Product {
     @JoinColumn(name = "user_id", nullable = false)
     private User seller;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonManagedReference("product-ratings")
+    private List<Rating> ratings = new ArrayList<>();
+    
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonManagedReference("product-reviews")
     private List<Review> reviews = new ArrayList<>();
+    
+    @Transient
+    private Double averageRating;
 
     @Column(nullable = false)
     private boolean active = true;
