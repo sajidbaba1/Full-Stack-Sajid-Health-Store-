@@ -18,30 +18,38 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CartService cartService;
 
     /**
      * Constructor for UserService.
      * @param userRepository The repository to access user data.
      * @param passwordEncoder The encoder for hashing passwords.
+     * @param cartService The service for cart operations.
      */
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CartService cartService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.cartService = cartService;
     }
 
     /**
-     * Registers a new user.
+     * Registers a new user and creates an associated shopping cart.
      * This method encrypts the user's password using BCrypt and sets the creation timestamp.
      * @param user The user object to be saved.
-     * @return The saved user object.
+     * @return The saved user object with an associated cart.
      */
     public User registerUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
-        // For the purpose of this example, we'll set the role to 'ROLE_USER' by default.
-        // This will be expanded in a later step for different user types.
         user.setRole("ROLE_USER");
-        return userRepository.save(user);
+        
+        // Save the user first to get the generated ID
+        User savedUser = userRepository.save(user);
+        
+        // Create a new cart for the user
+        cartService.createCartForUser(savedUser);
+        
+        return savedUser;
     }
 
     /**
