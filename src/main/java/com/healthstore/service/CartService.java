@@ -100,25 +100,46 @@ public class CartService {
     /**
      * Clears all items from a user's cart.
      * @param userId The ID of the user whose cart should be cleared.
-     * @throws RuntimeException if the cart is not found.
+     * @throws RuntimeException if the user or cart is not found.
      */
     @Transactional
     public void clearCart(Long userId) {
+        // Get the user by ID
         User user = new User();
         user.setId(userId);
         
+        // Find the cart for the user
         Optional<Cart> optionalCart = cartRepository.findByUser(user);
         if (optionalCart.isEmpty()) {
-            throw new RuntimeException("Cart not found for user ID: " + userId);
+            // If cart doesn't exist, create a new empty cart for the user
+            Cart newCart = new Cart();
+            newCart.setUser(user);
+            cartRepository.save(newCart);
+            return;
         }
         
+        // Get the existing cart
         Cart cart = optionalCart.get();
         
-        // Delete all cart items
-        cartItemRepository.deleteAll(cart.getCartItems());
-        cart.getCartItems().clear();
-        
-        // Save the empty cart
-        cartRepository.save(cart);
+        // Clear all cart items
+        if (cart.getCartItems() != null && !cart.getCartItems().isEmpty()) {
+            // Delete all cart items from the database
+            cartItemRepository.deleteAll(cart.getCartItems());
+            // Clear the cart items collection
+            cart.getCartItems().clear();
+            // Save the updated cart
+            cartRepository.save(cart);
+        }
+    }
+    
+    /**
+     * Saves a cart to the database.
+     * Can be used to create a new cart or update an existing one.
+     * @param cart The cart to save.
+     * @return The saved cart.
+     */
+    @Transactional
+    public Cart save(Cart cart) {
+        return cartRepository.save(cart);
     }
 }

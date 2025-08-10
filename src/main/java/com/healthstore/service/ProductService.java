@@ -125,4 +125,15 @@ public class ProductService {
         
         productRepository.deleteById(id);
     }
+    
+    /**
+     * Saves a product to the database.
+     * Can be used to create a new product or update an existing one.
+     * @param product The product to save.
+     * @return The saved product.
+     */
+    @Transactional
+    public Product save(Product product) {
+        return productRepository.save(product);
+    }
 }
