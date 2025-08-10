@@ -7,6 +7,7 @@ import com.healthstore.model.User;
 import com.healthstore.repository.CartItemRepository;
 import com.healthstore.repository.CartRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -94,5 +95,30 @@ public class CartService {
     public Cart getUserCart(User user) {
         return cartRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Cart not found for user: " + user.getEmail()));
+    }
+
+    /**
+     * Clears all items from a user's cart.
+     * @param userId The ID of the user whose cart should be cleared.
+     * @throws RuntimeException if the cart is not found.
+     */
+    @Transactional
+    public void clearCart(Long userId) {
+        User user = new User();
+        user.setId(userId);
+        
+        Optional<Cart> optionalCart = cartRepository.findByUser(user);
+        if (optionalCart.isEmpty()) {
+            throw new RuntimeException("Cart not found for user ID: " + userId);
+        }
+        
+        Cart cart = optionalCart.get();
+        
+        // Delete all cart items
+        cartItemRepository.deleteAll(cart.getCartItems());
+        cart.getCartItems().clear();
+        
+        // Save the empty cart
+        cartRepository.save(cart);
     }
 }
