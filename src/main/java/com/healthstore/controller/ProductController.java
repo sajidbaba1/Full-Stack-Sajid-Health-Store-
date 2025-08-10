@@ -1,7 +1,9 @@
 package com.healthstore.controller;
 
+import com.healthstore.dto.ProductDTO;
 import com.healthstore.model.Product;
 import com.healthstore.service.ProductService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,16 +28,20 @@ public class ProductController {
     }
 
     /**
-     * Endpoint to create a new product.
+     * Endpoint to create a new product using a DTO.
      * This endpoint is only accessible to users with 'ROLE_SELLER' or 'ROLE_ADMIN'.
-     * @param product The product object from the request body.
-     * @return A response entity with the created product.
+     * @param productDTO The product data transfer object from the request body.
+     * @return A response entity with the created product or an error message.
      */
     @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
     @PostMapping
-    public ResponseEntity<Product> createProduct(@RequestBody Product product) {
-        Product createdProduct = productService.createProduct(product);
-        return new ResponseEntity<>(createdProduct, HttpStatus.CREATED);
+    public ResponseEntity<?> createProduct(@Valid @RequestBody ProductDTO productDTO) {
+        try {
+            Product createdProduct = productService.createProduct(productDTO);
+            return new ResponseEntity<>(createdProduct, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
     /**

@@ -1,5 +1,7 @@
 package com.healthstore.service;
 
+import com.healthstore.dto.ProductDTO;
+import com.healthstore.model.Category;
 import com.healthstore.model.Product;
 import com.healthstore.repository.ProductRepository;
 import org.springframework.stereotype.Service;
@@ -16,17 +18,34 @@ import java.util.Optional;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final CategoryService categoryService;
 
-    public ProductService(ProductRepository productRepository) {
+    public ProductService(ProductRepository productRepository, CategoryService categoryService) {
         this.productRepository = productRepository;
+        this.categoryService = categoryService;
     }
 
     /**
-     * Creates a new product in the database.
-     * @param product The product object to be saved.
-     * @return The saved product.
+     * Creates a new product from a DTO.
+     * It finds the category by ID and then saves the product entity.
+     * @param productDTO The product data from the request.
+     * @return The saved product entity.
+     * @throws RuntimeException if the category is not found.
      */
-    public Product createProduct(Product product) {
+    public Product createProduct(ProductDTO productDTO) {
+        Optional<Category> optionalCategory = categoryService.getCategoryById(productDTO.getCategoryId());
+        if (optionalCategory.isEmpty()) {
+            throw new RuntimeException("Category not found with ID: " + productDTO.getCategoryId());
+        }
+        Category category = optionalCategory.get();
+        Product product = new Product();
+        product.setName(productDTO.getName());
+        product.setDescription(productDTO.getDescription());
+        product.setPrice(productDTO.getPrice());
+        product.setStock(productDTO.getStock());
+        product.setImageUrl(productDTO.getImageUrl());
+        product.setCategory(category);
+
         return productRepository.save(product);
     }
 

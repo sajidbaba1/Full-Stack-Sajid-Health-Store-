@@ -36,4 +36,13 @@ public class CategoryService {
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();
     }
+
+    /**
+     * Finds a category by its unique ID.
+     * @param id The ID of the category to find.
+     * @return An Optional containing the category if found, or empty if not found.
+     */
+    public Optional<Category> getCategoryById(Long id) {
+        return categoryRepository.findById(id);
+    }
 }
