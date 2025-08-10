@@ -27,13 +27,67 @@ public class Address {
      * @JoinColumn(name = "user_id") specifies the foreign key column in the
      * 'addresses' table that links to the 'users' table.
      */
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    private String streetAddress;
+    @Column(name = "street", nullable = false)
+    private String street;
+    
+    @Column(nullable = false)
     private String city;
+    
+    @Column(nullable = false)
     private String state;
-    private String pinCode;
-    private String mobile;
+    
+    @Column(name = "postal_code", nullable = false)
+    private String postalCode;
+    
+    @Column(nullable = false)
+    private String country;
+    
+    @Column(name = "phone_number")
+    private String phoneNumber;
+    
+    @Column(name = "is_default")
+    private boolean isDefault = false;
+    
+    @Column(name = "address_type")
+    private String addressType; // e.g., "HOME", "WORK", "BILLING", "SHIPPING"
+    
+    // Explicit getters and setters for fields that might have naming conflicts with Lombok
+    
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+    
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+    
+    public boolean isDefault() {
+        return isDefault;
+    }
+    
+    public void setDefault(boolean isDefault) {
+        this.isDefault = isDefault;
+    }
+    
+    public String getAddressType() {
+        return addressType;
+    }
+    
+    public void setAddressType(String addressType) {
+        this.addressType = addressType;
+    }
+    
+    // Convenience method to check if this is the default address
+    public boolean getIsDefault() {
+        return isDefault;
+    }
+    
+    // Convenience method to set the default status
+    public void setIsDefault(boolean isDefault) {
+        this.isDefault = isDefault;
+    }
 }

@@ -46,4 +46,13 @@ public class CategoryService {
     public Optional<Category> getCategoryById(Long id) {
         return categoryRepository.findById(id);
     }
+    
+    /**
+     * Checks if a category with the given ID exists.
+     * @param id The ID of the category to check.
+     * @return true if a category with the given ID exists, false otherwise.
+     */
+    public boolean existsById(Long id) {
+        return categoryRepository.existsById(id);
+    }
 }

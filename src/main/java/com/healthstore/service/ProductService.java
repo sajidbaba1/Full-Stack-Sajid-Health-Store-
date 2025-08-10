@@ -7,6 +7,8 @@ import com.healthstore.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,9 +53,20 @@ public class ProductService {
     }
 
     /**
-     * Retrieves all products from the database.
-     * @return A list of all products.
+     * Retrieves all products with pagination support.
+     * @param pageable The pagination information (page number, page size, sorting).
+     * @return A page of products.
      */
+    public Page<Product> getAllProducts(Pageable pageable) {
+        return productRepository.findAll(pageable);
+    }
+    
+    /**
+     * Retrieves all products without pagination (for backward compatibility).
+     * @return A list of all products.
+     * @deprecated Use {@link #getAllProducts(Pageable)} with pagination instead.
+     */
+    @Deprecated
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
