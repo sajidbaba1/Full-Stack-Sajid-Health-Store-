@@ -117,4 +117,13 @@ public class ProductService {
     public List<Product> getFeaturedProducts() {
         return productRepository.findTop10ByOrderByCreatedAtDesc();
     }
+    
+    /**
+     * Saves a product to the database.
+     * @param product The product to save.
+     * @return The saved product.
+     */
+    public Product save(Product product) {
+        return productRepository.save(product);
+    }
 }
