@@ -79,7 +79,6 @@ public class UserService {
         user.setFirstName(userUpdateDTO.getFirstName());
         user.setLastName(userUpdateDTO.getLastName());
         user.setMobile(userUpdateDTO.getMobile());
-        user.setUpdatedAt(LocalDateTime.now());
 
         return userRepository.save(user);
     }
