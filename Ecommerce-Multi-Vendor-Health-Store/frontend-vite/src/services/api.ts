@@ -1,10 +1,8 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import {
   User,
   Product,
-  ProductResponseDTO,
   Cart,
-  CartItem,
   Order,
   Review,
   Category,
@@ -12,17 +10,13 @@ import {
   AuthResponse,
   RegisterRequest,
   ReviewRequestDTO,
-  SearchFilterDTO,
-  PaymentRequestDTO,
   UserUpdateDTO,
-  PasswordUpdateDTO,
-  PageResponse,
-  PageRequest
+  PasswordUpdateDTO
 } from '../types/api';
 
 class ApiService {
   private api: AxiosInstance;
-  private baseURL = 'http://localhost:8080';
+  private baseURL = 'http://localhost:5454';
 
   constructor() {
     this.api = axios.create({
@@ -50,195 +44,290 @@ class ApiService {
     this.api.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401) {
-          // Token expired or invalid
-          localStorage.removeItem('jwt');
-          localStorage.removeItem('user');
-          window.location.href = '/login';
+        if (error.response?.status === 403) {
+          console.error('Access forbidden - check authentication');
+          // Don't redirect for public endpoints
+          if (!error.config?.url?.includes('/products') && !error.config?.url?.includes('/categories')) {
+            localStorage.removeItem('jwt');
+            window.location.href = '/login';
+          }
         }
         return Promise.reject(error);
       }
     );
   }
 
-  // Authentication APIs
-  async login(credentials: AuthRequest): Promise<AuthResponse> {
-    const response: AxiosResponse<AuthResponse> = await this.api.post('/auth/login', credentials);
-    return response.data;
+  // Generic error handler
+  private handleError(error: any): never {
+    console.error('API Error:', error);
+    throw error;
   }
 
-  async register(userData: RegisterRequest): Promise<AuthResponse> {
-    const response: AxiosResponse<AuthResponse> = await this.api.post('/auth/register', userData);
-    return response.data;
+  // Public endpoints - no auth required
+  async getProducts(params?: {
+    page?: number;
+    size?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    categoryId?: number;
+    query?: string;
+    minPrice?: number;
+    maxPrice?: number;
+  }): Promise<any> {
+    try {
+      const response = await this.api.get('/api/products', {
+        params: {
+          page: params?.page || 0,
+          size: params?.size || 12,
+          sort: params?.sortBy === 'newest' ? 'createdAt,desc' : (params?.sortBy || 'name'),
+          order: params?.sortOrder || 'asc',
+          categoryId: params?.categoryId,
+          search: params?.query,
+          minPrice: params?.minPrice,
+          maxPrice: params?.maxPrice,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      // Return empty response instead of throwing for 403 errors
+      return {
+        content: [],
+        totalPages: 0,
+        totalElements: 0,
+        page: 0,
+        size: 12
+      };
+    }
   }
 
-  // Product APIs
-  async getProducts(filters?: SearchFilterDTO): Promise<PageResponse<ProductResponseDTO>> {
-    const params = new URLSearchParams();
-    if (filters?.query) params.append('query', filters.query);
-    if (filters?.categoryId) params.append('categoryId', filters.categoryId.toString());
-    if (filters?.minPrice) params.append('minPrice', filters.minPrice.toString());
-    if (filters?.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
-    if (filters?.sortBy) params.append('sortBy', filters.sortBy);
-    if (filters?.sortDirection) params.append('sortDirection', filters.sortDirection);
-    if (filters?.page) params.append('page', filters.page.toString());
-    if (filters?.size) params.append('size', filters.size.toString());
-
-    const response: AxiosResponse<PageResponse<ProductResponseDTO>> = await this.api.get(
-      `/api/products?${params.toString()}`
-    );
-    return response.data;
+  async getProduct(id: number): Promise<Product> {
+    try {
+      const response = await this.api.get(`/api/products/${id}`);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  async getProductById(id: number): Promise<Product> {
-    const response: AxiosResponse<Product> = await this.api.get(`/api/products/${id}`);
-    return response.data;
-  }
-
-  async getFeaturedProducts(): Promise<ProductResponseDTO[]> {
-    const response: AxiosResponse<ProductResponseDTO[]> = await this.api.get('/api/products/featured');
-    return response.data;
-  }
-
-  async searchProducts(query: string): Promise<ProductResponseDTO[]> {
-    const response: AxiosResponse<ProductResponseDTO[]> = await this.api.get(
-      `/api/products/search?query=${encodeURIComponent(query)}`
-    );
-    return response.data;
-  }
-
-  // Category APIs
   async getCategories(): Promise<Category[]> {
-    const response: AxiosResponse<Category[]> = await this.api.get('/api/categories');
-    return response.data;
+    try {
+      const response = await this.api.get('/api/categories');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      return [];
+    }
   }
 
-  async getCategoryById(id: number): Promise<Category> {
-    const response: AxiosResponse<Category> = await this.api.get(`/api/categories/${id}`);
-    return response.data;
+  async getCategory(id: number): Promise<Category> {
+    try {
+      const response = await this.api.get(`/api/categories/${id}`);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  // Cart APIs
+  // Authentication endpoints
+  async login(credentials: AuthRequest): Promise<AuthResponse> {
+    try {
+      const response = await this.api.post('/auth/login', credentials);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async register(userData: RegisterRequest): Promise<User> {
+    try {
+      const response = await this.api.post('/auth/register', userData);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  // Cart endpoints
   async getCart(): Promise<Cart> {
-    const response: AxiosResponse<Cart> = await this.api.get('/api/cart');
-    return response.data;
+    try {
+      const response = await this.api.get('/api/cart');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  async addToCart(productId: number, quantity: number): Promise<CartItem> {
-    const response: AxiosResponse<CartItem> = await this.api.post('/api/cart/add', {
-      productId,
-      quantity
-    });
-    return response.data;
+  async addToCart(productId: number, quantity: number): Promise<Cart> {
+    try {
+      const response = await this.api.post('/api/cart/add', { productId, quantity });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  async updateCartItem(itemId: number, quantity: number): Promise<CartItem> {
-    const response: AxiosResponse<CartItem> = await this.api.put(`/api/cart/items/${itemId}`, {
-      quantity
-    });
-    return response.data;
+  async updateCartItem(productId: number, quantity: number): Promise<Cart> {
+    try {
+      const response = await this.api.put('/api/cart/update', { productId, quantity });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  async removeFromCart(itemId: number): Promise<void> {
-    await this.api.delete(`/api/cart/items/${itemId}`);
+  async removeFromCart(productId: number): Promise<Cart> {
+    try {
+      const response = await this.api.delete(`/api/cart/remove/${productId}`);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  async clearCart(): Promise<void> {
-    await this.api.delete('/api/cart/clear');
+  // Order endpoints
+  async getOrders(): Promise<Order[]> {
+    try {
+      const response = await this.api.get('/api/orders');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  // Order APIs
-  async createOrder(shippingAddressId: number): Promise<Order> {
-    const response: AxiosResponse<Order> = await this.api.post('/api/orders', {
-      shippingAddressId
-    });
-    return response.data;
+  async createOrder(orderData: any): Promise<Order> {
+    try {
+      const response = await this.api.post('/api/orders', orderData);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  async getUserOrders(pageRequest?: PageRequest): Promise<PageResponse<Order>> {
-    const params = new URLSearchParams();
-    if (pageRequest?.page) params.append('page', pageRequest.page.toString());
-    if (pageRequest?.size) params.append('size', pageRequest.size.toString());
-    if (pageRequest?.sort) params.append('sort', pageRequest.sort);
-
-    const response: AxiosResponse<PageResponse<Order>> = await this.api.get(
-      `/api/users/orders?${params.toString()}`
-    );
-    return response.data;
+  async updateOrderStatus(orderId: number, status: string): Promise<Order> {
+    try {
+      const response = await this.api.put(`/api/orders/${orderId}/status`, { status });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  async getOrderById(id: number): Promise<Order> {
-    const response: AxiosResponse<Order> = await this.api.get(`/api/orders/${id}`);
-    return response.data;
+  // Review endpoints
+  async getReviews(productId: number): Promise<Review[]> {
+    try {
+      const response = await this.api.get(`/api/reviews/product/${productId}`);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  async updateOrderStatus(id: number, status: string): Promise<Order> {
-    const response: AxiosResponse<Order> = await this.api.put(`/api/orders/${id}/status`, {
-      status
-    });
-    return response.data;
+  async createReview(reviewData: ReviewRequestDTO): Promise<Review> {
+    try {
+      const response = await this.api.post('/api/reviews', reviewData);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  // Review APIs
-  async getProductReviews(productId: number): Promise<Review[]> {
-    const response: AxiosResponse<Review[]> = await this.api.get(`/api/products/${productId}/reviews`);
-    return response.data;
+  // User endpoints
+  async getUserProfile(): Promise<User> {
+    try {
+      const response = await this.api.get('/api/users/profile');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  async submitReview(review: ReviewRequestDTO): Promise<Review> {
-    const response: AxiosResponse<Review> = await this.api.post('/api/reviews', review);
-    return response.data;
+  async updateUserProfile(userData: UserUpdateDTO): Promise<User> {
+    try {
+      const response = await this.api.put('/api/users/profile', userData);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  async getUserReviews(): Promise<Review[]> {
-    const response: AxiosResponse<Review[]> = await this.api.get('/api/reviews/user');
-    return response.data;
+  async changePassword(passwordData: PasswordUpdateDTO): Promise<void> {
+    try {
+      await this.api.put('/api/users/change-password', passwordData);
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  async removeReview(productId: number): Promise<void> {
-    await this.api.delete(`/api/reviews/product/${productId}`);
-  }
-
-  // User Profile APIs
   async getCurrentUser(): Promise<User> {
-    const response: AxiosResponse<User> = await this.api.get('/api/users/profile');
-    return response.data;
+    try {
+      const response = await this.api.get('/auth/me');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  async updateProfile(userData: UserUpdateDTO): Promise<User> {
-    const response: AxiosResponse<User> = await this.api.put('/api/users/profile', userData);
-    return response.data;
+  // Payment endpoints
+  async createPaymentSession(orderId: number): Promise<any> {
+    try {
+      const response = await this.api.post('/api/payments/create-session', { orderId });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  async updatePassword(passwordData: PasswordUpdateDTO): Promise<void> {
-    await this.api.put('/api/users/password', passwordData);
+  // Admin endpoints
+  async getSalesReport(startDate: string, endDate: string): Promise<any> {
+    try {
+      const response = await this.api.get(`/api/admin/reports/sales?startDate=${startDate}&endDate=${endDate}`);
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  // Payment APIs
-  async createCheckoutSession(paymentData: PaymentRequestDTO): Promise<string> {
-    const response: AxiosResponse<string> = await this.api.post('/api/payments/create-checkout-session', paymentData);
-    return response.data;
+  async getUserActivityReport(): Promise<any> {
+    try {
+      const response = await this.api.get('/api/admin/reports/users');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
-  // Recommendation APIs
-  async getRecommendations(): Promise<ProductResponseDTO[]> {
-    const response: AxiosResponse<ProductResponseDTO[]> = await this.api.get('/api/recommendations');
-    return response.data;
+  // Chatbot endpoint
+  async sendChatMessage(message: string): Promise<any> {
+    try {
+      const response = await this.api.post('/api/chatbot/ask', { message: message });
+      return response.data;
+    } catch (error) {
+      console.error('Error sending chat message:', error);
+      throw new Error('Failed to send message to chatbot');
+    }
   }
 
-  // Chatbot API
-  async askChatbot(message: string): Promise<string> {
-    const response: AxiosResponse<string> = await this.api.post('/api/chatbot/ask', message, {
-      headers: {
-        'Content-Type': 'text/plain'
-      }
-    });
-    return response.data;
+  // File upload endpoint
+  async uploadFile(file: File): Promise<any> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await this.api.post('/api/files/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
   }
 
   // Utility methods
-  setAuthToken(token: string): void {
-    localStorage.setItem('jwt', token);
+  async setAuthToken(token: string): Promise<void> {
+    this.api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   }
 
   removeAuthToken(): void {
@@ -257,6 +346,27 @@ class ApiService {
 
   setCurrentUser(user: User): void {
     localStorage.setItem('user', JSON.stringify(user));
+  }
+
+  // Generic HTTP methods
+  async get<T = any>(url: string, config?: any): Promise<{ data: T }> {
+    const response = await this.api.get(url, config);
+    return response;
+  }
+
+  async post<T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> {
+    const response = await this.api.post(url, data, config);
+    return response;
+  }
+
+  async put<T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> {
+    const response = await this.api.put(url, data, config);
+    return response;
+  }
+
+  async delete<T = any>(url: string, config?: any): Promise<{ data: T }> {
+    const response = await this.api.delete(url, config);
+    return response;
   }
 }
 

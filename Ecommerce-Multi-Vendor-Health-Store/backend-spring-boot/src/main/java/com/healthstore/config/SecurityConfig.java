@@ -52,8 +52,11 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 // Public endpoints
                 .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/oauth2/**").permitAll()
+                .requestMatchers("/login/oauth2/code/**").permitAll()
                 .requestMatchers("/api/products/**").permitAll()
                 .requestMatchers("/api/categories/**").permitAll()
+                .requestMatchers("/api/chatbot/**").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
                 
                 // User and cart endpoints
@@ -84,6 +87,10 @@ public class SecurityConfig {
                 
                 // All other requests require authentication
                 .anyRequest().authenticated()
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .defaultSuccessUrl("/auth/oauth/success", true)
+                .failureUrl("/auth/oauth/failure")
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Make sessions stateless

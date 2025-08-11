@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User, AuthRequest, RegisterRequest } from '../types/api';
+import { User, AuthRequest, RegisterRequest, AuthResponse } from '../types/api';
 import { apiService } from '../services/api';
 
 interface AuthState {
   user: User | null;
+  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -15,12 +16,16 @@ interface AuthState {
   logout: () => void;
   clearError: () => void;
   refreshUser: () => Promise<void>;
+  isAdmin: () => boolean;
+  isSeller: () => boolean;
+  isCustomer: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
+      token: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
@@ -28,21 +33,29 @@ export const useAuthStore = create<AuthState>()(
       login: async (credentials: AuthRequest) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await apiService.login(credentials);
-          apiService.setAuthToken(response.jwt);
-          apiService.setCurrentUser(response.user);
+          const response: AuthResponse = await apiService.login(credentials);
+          
+          const token = response.jwt;
+          const user = response.user;
+          
+          // Store token
+          localStorage.setItem('jwt', token);
+          apiService.setAuthToken(token);
+          
           set({ 
-            user: response.user, 
+            user: user, 
+            token: token, 
             isAuthenticated: true, 
             isLoading: false 
           });
         } catch (error: any) {
-          const errorMessage = error.response?.data?.message || 'Login failed';
+          const errorMessage = error.response?.data?.message || error.message || 'Login failed';
           set({ 
             error: errorMessage, 
             isLoading: false,
             isAuthenticated: false,
-            user: null
+            user: null,
+            token: null
           });
           throw error;
         }
@@ -52,10 +65,13 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await apiService.register(userData);
-          apiService.setAuthToken(response.jwt);
-          apiService.setCurrentUser(response.user);
+          // Extract token and user from response structure
+          const token = (response as any).token || (response as any).jwt;
+          const user = (response as any).user || response;
+          
           set({ 
-            user: response.user, 
+            user: user as User, 
+            token: token as string, 
             isAuthenticated: true, 
             isLoading: false 
           });
@@ -65,7 +81,8 @@ export const useAuthStore = create<AuthState>()(
             error: errorMessage, 
             isLoading: false,
             isAuthenticated: false,
-            user: null
+            user: null,
+            token: null
           });
           throw error;
         }
@@ -75,6 +92,7 @@ export const useAuthStore = create<AuthState>()(
         apiService.removeAuthToken();
         set({ 
           user: null, 
+          token: null, 
           isAuthenticated: false, 
           error: null 
         });
@@ -85,22 +103,42 @@ export const useAuthStore = create<AuthState>()(
       },
 
       refreshUser: async () => {
-        if (!get().isAuthenticated) return;
-        
+        set({ isLoading: true, error: null });
         try {
-          const user = await apiService.getCurrentUser();
-          apiService.setCurrentUser(user);
-          set({ user });
-        } catch (error) {
-          // If refresh fails, logout the user
-          get().logout();
+          const user = await apiService.getUserProfile();
+          set({ user, isLoading: false });
+        } catch (error: any) {
+          const errorMessage = error.response?.data?.message || 'Failed to refresh user';
+          set({ 
+            error: errorMessage, 
+            isLoading: false,
+            isAuthenticated: false,
+            user: null,
+            token: null
+          });
         }
+      },
+
+      isAdmin: () => {
+        const { user } = get();
+        return user?.roles?.some(role => role.name === 'ADMIN') || false;
+      },
+
+      isSeller: () => {
+        const { user } = get();
+        return user?.roles?.some(role => role.name === 'SELLER') || false;
+      },
+
+      isCustomer: () => {
+        const { user } = get();
+        return user?.roles?.some(role => role.name === 'CUSTOMER') || false;
       }
     }),
     {
       name: 'auth-store',
       partialize: (state) => ({
         user: state.user,
+        token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
     }

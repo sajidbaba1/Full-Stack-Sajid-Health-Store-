@@ -47,12 +47,6 @@ public class UserService {
     }
 
     /**
-     * Registers a new user.
-     * This method encrypts the user's password using BCrypt and sets the creation timestamp.
-     * @param user The user object to be saved.
-     * @return The saved user object.
-     */
-    /**
      * Registers a new user and creates an associated shopping cart.
      * @param user The user object to be saved.
      * @return The saved user object with an associated cart.
@@ -61,13 +55,38 @@ public class UserService {
         // Encode the user's password
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setCreatedAt(LocalDateTime.now());
-        user.setRole("ROLE_USER");
         
         // Save the user first to get the generated ID
         User savedUser = userRepository.save(user);
         
         // Create a new cart for the user
         cartService.createCartForUser(savedUser);
+        
+        return savedUser;
+    }
+
+    /**
+     * Registers a new user from OAuth2 provider (Google, Facebook)
+     * @param user The user details from OAuth2 provider
+     * @return The registered user
+     */
+    @Transactional
+    public User registerOAuth2User(User user) {
+        if (user.getEmail() == null) {
+            throw new IllegalArgumentException("Email is required for OAuth2 registration");
+        }
+        
+        // Check if user already exists
+        Optional<User> existingUser = userRepository.findByEmail(user.getEmail());
+        if (existingUser.isPresent()) {
+            return existingUser.get();
+        }
+        
+        // Set default values for OAuth2 user
+        user.setPassword(null); // No password for OAuth2 users
+        user.setCreatedAt(LocalDateTime.now());
+        
+        User savedUser = userRepository.save(user);
         
         return savedUser;
     }
@@ -164,30 +183,6 @@ public class UserService {
     }
 
     /**
-     * Updates a user's role.
-     * @param id The ID of the user to update.
-     * @param roleName The name of the role to assign to the user.
-     * @return The updated user entity.
-     * @throws RuntimeException if the user or role is not found.
-     */
-    public User updateUserRole(Long id, String roleName) {
-        Optional<User> optionalUser = userRepository.findById(id);
-        Optional<Role> optionalRole = roleRepository.findByName(roleName);
-        
-        if (optionalUser.isEmpty() || optionalRole.isEmpty()) {
-            throw new RuntimeException("User or role not found");
-        }
-        
-        User user = optionalUser.get();
-        Set<Role> roles = user.getRoles();
-        roles.clear();
-        roles.add(optionalRole.get());
-        user.setRoles(roles);
-        
-        return userRepository.save(user);
-    }
-    
-    /**
      * Finds a user by their ID.
      * @param id The ID of the user to find.
      * @return An Optional containing the user if found, or empty if not found.
@@ -214,11 +209,35 @@ public class UserService {
     }
     
     /**
-     * Finds a user by their email address.
-     * @param email The email address to search for.
-     * @return An Optional containing the user if found, or empty if not found.
+     * Find user by email
+     * @param email User email
+     * @return User or null if not found
      */
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
+    }
+
+    /**
+     * Updates a user's role.
+     * @param id The ID of the user to update.
+     * @param roleName The name of the role to assign to the user.
+     * @return The updated user entity.
+     * @throws RuntimeException if the user or role is not found.
+     */
+    public User updateUserRole(Long id, String roleName) {
+        Optional<User> optionalUser = userRepository.findById(id);
+        Optional<Role> optionalRole = roleRepository.findByName(roleName);
+        
+        if (optionalUser.isEmpty() || optionalRole.isEmpty()) {
+            throw new RuntimeException("User or role not found");
+        }
+        
+        User user = optionalUser.get();
+        Set<Role> roles = user.getRoles();
+        roles.clear();
+        roles.add(optionalRole.get());
+        user.setRoles(roles);
+        
+        return userRepository.save(user);
     }
 }
