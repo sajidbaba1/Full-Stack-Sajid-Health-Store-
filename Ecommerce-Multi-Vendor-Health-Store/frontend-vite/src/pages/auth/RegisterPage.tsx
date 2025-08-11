@@ -112,7 +112,7 @@ export function RegisterPage() {
             >
               <Package className="h-8 w-8 text-white" />
             </motion.div>
-            <h1 className="text-2xl font-bold text-gradient">Join HealthStore</h1>
+            <h1 className="text-2xl font-bold text-gradient">Join Sajid Healthstore</h1>
             <p className="text-muted-foreground mt-2">
               Create your account to start your wellness journey
             </p>

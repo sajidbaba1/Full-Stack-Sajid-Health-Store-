@@ -60,9 +60,9 @@ export function CartPage() {
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   const originalTotal = cartItems.reduce((sum, item) => sum + (item.originalPrice * item.quantity), 0)
   const savings = originalTotal - subtotal
-  const shipping = subtotal > 50 ? 0 : 9.99
-  const tax = subtotal * 0.08 // 8% tax
-  const discount = appliedCoupon ? subtotal * 0.1 : 0 // 10% discount if coupon applied
+  const shipping = subtotal > 1000 ? 0 : 99 // Free shipping on orders over ₹1000
+  const tax = subtotal * 0.18 // 18% GST (standard in India)
+  const discount = appliedCoupon ? subtotal * 0.1 : 0 // 10% discount with coupon
   const total = subtotal + shipping + tax - discount
 
   const handleQuantityChange = (itemId: string, change: number) => {

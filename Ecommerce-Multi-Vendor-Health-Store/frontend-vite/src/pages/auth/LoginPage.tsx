@@ -86,7 +86,7 @@ export function LoginPage() {
             </motion.div>
             <h1 className="text-2xl font-bold text-gradient">Welcome Back</h1>
             <p className="text-muted-foreground mt-2">
-              Sign in to your HealthStore account
+              Sign in to your Sajid Healthstore account
             </p>
           </div>
 

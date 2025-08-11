@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import { 
   Search, 
@@ -7,44 +7,27 @@ import {
   Star, 
   Heart, 
   ShoppingCart,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Loader2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { cn, formatPrice } from "@/lib/utils"
+import { apiService } from "@/services/api"
+import { Product as ProductType, Category } from "@/types/api"
 
-// Define the Product interface
-type Product = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  originalPrice: number;
-  rating: number;
-  reviews: number;
-  imageUrl: string;
-  category: string;
+// Extended Product type with UI-specific properties
+interface Product extends ProductType {
+  originalPrice?: number;
   inStock: boolean;
   featured: boolean;
-};
-
-// Mock data - replace with actual API calls
-const products: Product[] = [
-  {
-    id: "1",
-    name: "Premium Vitamin D3",
-    description: "High-quality vitamin D3 supplement for immune support and bone health",
-    price: 29.99,
-    originalPrice: 39.99,
-    rating: 4.8,
-    reviews: 124,
-    imageUrl: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=400&fit=crop",
-    category: "Vitamins",
-    inStock: true,
-    featured: true,
-  },
+  imageUrl: string;
+  category: string;
+  rating: number;
+  reviews: number;
+}
   {
     id: "2",
     name: "Organic Protein Powder",
@@ -75,8 +58,8 @@ const products: Product[] = [
     id: "4",
     name: "Multivitamin Complex",
     description: "Complete daily multivitamin for overall wellness and energy",
-    price: 24.99,
-    originalPrice: 34.99,
+    price: 1299,
+    originalPrice: 1799,
     rating: 4.6,
     reviews: 203,
     imageUrl: "https://images.unsplash.com/photo-1550572017-edd951aa8f72?w=400&h=400&fit=crop",
@@ -88,8 +71,8 @@ const products: Product[] = [
     id: "5",
     name: "Probiotics Capsules",
     description: "Advanced probiotic formula for digestive health and immunity",
-    price: 39.99,
-    originalPrice: 49.99,
+    price: 1999,
+    originalPrice: 2499,
     rating: 4.5,
     reviews: 78,
     imageUrl: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=400&fit=crop",
@@ -101,8 +84,8 @@ const products: Product[] = [
     id: "6",
     name: "Collagen Peptides",
     description: "Hydrolyzed collagen for skin, hair, and joint health",
-    price: 44.99,
-    originalPrice: 54.99,
+    price: 2299,
+    originalPrice: 2799,
     rating: 4.4,
     reviews: 92,
     imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=400&fit=crop",
@@ -128,19 +111,98 @@ const sortOptions = [
   { label: "Newest", value: "newest" },
 ]
 
-export function ProductsPage() {
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [selectedCategory, setSelectedCategory] = useState("All")
-  const [sortBy, setSortBy] = useState("featured")
+export default function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [view, setView] = useState<"grid" | "list">("grid")
   const [searchQuery, setSearchQuery] = useState("")
-  const [showFilters, setShowFilters] = useState(false)
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000])
+  const [selectedCategories, setSelectedCategories] = useState<number[]>([])
+  const [sortBy, setSortBy] = useState<"relevance" | "price_asc" | "price_desc" | "rating">("relevance")
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        // Fetch products with filters
+        const productsResponse = await apiService.getProducts({
+          page: 0,
+          size: 50,
+          sortBy: sortBy === 'relevance' ? 'newest' : 
+                 sortBy === 'price_asc' ? 'price,asc' : 
+                 sortBy === 'price_desc' ? 'price,desc' : 'rating,desc',
+          minPrice: priceRange[0],
+          maxPrice: priceRange[1],
+          query: searchQuery || undefined,
+          categoryId: selectedCategories.length > 0 ? selectedCategories[0] : undefined
+        })
+        
+        // Transform API data to match our UI requirements
+        const transformedProducts = productsResponse.content.map(product => ({
+          ...product,
+          originalPrice: product.originalPrice || 0,
+          inStock: product.stock > 0,
+          featured: product.featured || false,
+          imageUrl: product.imageUrl || 'https://via.placeholder.com/300',
+          category: product.category?.name || 'Uncategorized',
+          rating: product.rating || 0,
+          reviews: product.reviewCount || 0
+        }))
+        
+        setProducts(transformedProducts)
+        
+        // Fetch categories if not already loaded
+        if (categories.length === 0) {
+          const categoriesResponse = await apiService.getCategories()
+          setCategories(categoriesResponse)
+        }
+        
+      } catch (error) {
+        console.error('Error fetching data:', error)
+        setError('Failed to load products. Please try again later.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    const debounceTimer = setTimeout(() => {
+      fetchData()
+    }, 300) // Debounce search to avoid too many API calls
+    
+    return () => clearTimeout(debounceTimer)
+  }, [searchQuery, priceRange, selectedCategories, sortBy, categories.length])
+
+  // Handle loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="text-center text-red-500">{error}</div>
+        <div className="mt-4 text-center">
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </div>
+    )
+  }
 
   const filteredProducts = useMemo(() => {
     let filtered = products
 
     // Filter by category
-    if (selectedCategory !== "All") {
-      filtered = filtered.filter((product: Product) => product.category === selectedCategory)
+    if (selectedCategories.length > 0) {
+      filtered = filtered.filter((product: Product) => selectedCategories.includes(product.category))
     }
 
     // Filter by search query

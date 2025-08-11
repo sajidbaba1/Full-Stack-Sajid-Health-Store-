@@ -14,6 +14,7 @@ import { ProfilePage } from "@/pages/user/ProfilePage"
 import { DashboardPage } from "@/pages/admin/DashboardPage"
 import { NotFoundPage } from "@/pages/NotFoundPage"
 import { Footer } from "@/components/layout/Footer"
+import { Chatbot } from "@/components/chatbot/Chatbot"
 
 // Page transition variants
 const pageVariants = {
@@ -53,6 +54,7 @@ function PageLayout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <Footer />
+      <Chatbot />
     </motion.div>
   )
 }

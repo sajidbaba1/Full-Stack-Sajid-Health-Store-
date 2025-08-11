@@ -76,26 +76,26 @@ export function Footer() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-secondary">
                   <Package className="h-5 w-5 text-white" />
                 </div>
-                <span className="text-xl font-bold text-gradient">HealthStore</span>
+                <span className="text-xl font-bold text-gradient">Sajid Healthstore</span>
               </Link>
               
               <p className="text-muted-foreground max-w-sm">
-                Your trusted partner in health and wellness. We provide premium quality supplements 
+                Your trusted partner in health and wellness in Pune. We provide premium quality supplements 
                 and health products to support your journey to better health.
               </p>
               
               <div className="space-y-2">
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                   <MapPin className="h-4 w-4" />
-                  <span>123 Health Street, Wellness City, WC 12345</span>
+                  <span>Pune, Maharashtra, India</span>
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                   <Phone className="h-4 w-4" />
-                  <span>+1 (555) 123-4567</span>
+                  <span>+91 98765 43210</span>
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                   <Mail className="h-4 w-4" />
-                  <span>support@healthstore.com</span>
+                  <span>support@sajidhealthstore.com</span>
                 </div>
               </div>
             </motion.div>
@@ -223,7 +223,7 @@ export function Footer() {
             viewport={{ once: true }}
             className="flex items-center space-x-4 text-sm text-muted-foreground"
           >
-            <span>© 2024 HealthStore. All rights reserved.</span>
+            <span>&copy; 2024 Sajid Healthstore. All rights reserved.</span>
             <span className="hidden md:inline">•</span>
             <span className="flex items-center space-x-1">
               <span>Made with</span>

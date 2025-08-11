@@ -14,7 +14,7 @@ export function DashboardPage() {
   const stats = [
     {
       title: "Total Revenue",
-      value: "$45,231.89",
+      value: "₹3,78,456.50",
       change: "+20.1%",
       icon: DollarSign,
       trend: "up"

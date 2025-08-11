@@ -21,8 +21,8 @@ import { cn, formatPrice } from "@/lib/utils"
 const productData = {
   id: "1",
   name: "Premium Vitamin D3",
-  description: "High-quality vitamin D3 supplement for immune support and bone health. Our premium formula provides 2000 IU of vitamin D3 per capsule, sourced from the finest ingredients to ensure maximum absorption and effectiveness.",
-  longDescription: "This premium vitamin D3 supplement is carefully formulated to support your immune system and promote healthy bones. Each capsule contains 2000 IU of cholecalciferol (vitamin D3), the most bioavailable form of vitamin D. Our advanced formula includes natural ingredients that enhance absorption, ensuring you get the maximum benefit from each dose.",
+  description: "High-quality vitamin D3 supplement for immune support and bone health. Sajid Healthstore's premium formula provides 2000 IU of vitamin D3 per capsule, sourced from the finest ingredients to ensure maximum absorption and effectiveness.",
+  longDescription: "This premium vitamin D3 supplement is carefully formulated to support your immune system and promote healthy bones. Each capsule contains 2000 IU of cholecalciferol (vitamin D3), the most bioavailable form of vitamin D. Sajid Healthstore's advanced formula includes natural ingredients that enhance absorption, ensuring you get the maximum benefit from each dose.",
   price: 29.99,
   originalPrice: 39.99,
   rating: 4.8,
@@ -69,7 +69,7 @@ const reviews = [
     user: "Jennifer L.",
     rating: 5,
     date: "2024-01-05",
-    comment: "My doctor recommended vitamin D3 and this brand has been perfect. Great value for money.",
+    comment: "My doctor recommended vitamin D3 and Sajid Healthstore's brand has been perfect. Great value for money.",
     verified: true,
   },
 ]
@@ -281,7 +281,7 @@ export function ProductDetailPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t">
                 <div className="flex items-center gap-2 text-sm">
                   <Truck className="h-4 w-4 text-primary" />
-                  <span>Free shipping over $50</span>
+                  <span>Free shipping over ₹1000</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Shield className="h-4 w-4 text-primary" />

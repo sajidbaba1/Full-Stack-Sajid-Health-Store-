@@ -28,7 +28,7 @@ const cartItems = [
   {
     id: "2",
     name: "Organic Protein Powder",
-    price: 49.99,
+    price: 4999, // updated price in Rupees
     quantity: 1,
     imageUrl: "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=100&h=100&fit=crop",
   },
@@ -42,11 +42,11 @@ export function CheckoutPage() {
     lastName: "",
     email: "",
     phone: "",
-    address: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    country: "United States",
+    address: "123 Wellness Street",
+    city: "Pune",
+    state: "Maharashtra",
+    zipCode: "411001",
+    country: "India",
     // Payment Information
     cardNumber: "",
     expiryDate: "",
@@ -57,8 +57,8 @@ export function CheckoutPage() {
   })
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-  const shipping = 9.99
-  const tax = subtotal * 0.08
+  const shipping = subtotal > 1000 ? 0 : 99 // Free shipping on orders over ₹1000
+  const tax = subtotal * 0.18 // 18% GST (standard in India)
   const total = subtotal + shipping + tax
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -444,7 +444,7 @@ export function CheckoutPage() {
                   <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
                     <Check className="h-4 w-4" />
                     <span className="text-sm font-medium">
-                      Free shipping on orders over $50
+                      Free shipping on orders over ₹1000
                     </span>
                   </div>
                 </div>

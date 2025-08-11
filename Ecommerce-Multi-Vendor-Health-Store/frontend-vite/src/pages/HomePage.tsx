@@ -100,7 +100,7 @@ const features = [
   {
     icon: Truck,
     title: "Free Shipping",
-    description: "Free delivery on orders over $50",
+    description: "Free delivery on orders over ₹1000",
   },
   {
     icon: Shield,
@@ -180,8 +180,8 @@ export function HomePage() {
               transition={{ delay: 0.5, duration: 0.8 }}
               className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl"
             >
-              Discover premium health supplements and wellness products from trusted brands. 
-              Your journey to better health starts here.
+              Discover premium health supplements and wellness products at Sajid Healthstore. 
+              Your trusted source for quality health products in Pune, Maharashtra.
             </motion.p>
 
             <motion.div
