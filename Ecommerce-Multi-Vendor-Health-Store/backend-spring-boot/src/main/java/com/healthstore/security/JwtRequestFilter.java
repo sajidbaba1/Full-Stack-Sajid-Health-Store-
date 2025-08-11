@@ -1,6 +1,6 @@
 package com.healthstore.security;
 
-import com.healthstore.service.CustomUserDetailsService;
+import com.healthstore.security.CustomUserDetailsService;
 import com.healthstore.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

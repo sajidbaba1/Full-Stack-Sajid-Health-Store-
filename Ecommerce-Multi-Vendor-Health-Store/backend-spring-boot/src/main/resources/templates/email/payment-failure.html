@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{email/base-email}">
+
+<th:block layout:fragment="email-content">
+    <p>Hello <span th:text="${order.user.fullName}">Customer</span>,</p>
+    
+    <p>We noticed there was an issue processing your payment for order <strong th:text="${order.orderNumber}">#12345</strong>.</p>
+    
+    <div class="alert" style="background-color: #fff3f3; border-left: 4px solid #ff4444; padding: 12px 20px; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #d32f2f;">Payment Issue</h3>
+        <p th:if="${errorMessage != null}" th:text="${errorMessage}">Your payment could not be processed.</p>
+        <p th:unless="${errorMessage != null}">We were unable to process your payment. This might be due to insufficient funds, an expired card, or incorrect payment information.</p>
+    </div>
+    
+    <h2>Order Details</h2>
+    <p><strong>Order Number:</strong> <span th:text="${order.orderNumber}">#12345</span></p>
+    <p><strong>Order Date:</strong> <span th:text="${orderDate}">January 1, 2025</span></p>
+    <p><strong>Order Total:</strong> <span th:text="${formattedTotal}">$0.00</span></p>
+    
+    <h3>Next Steps</h3>
+    <ol>
+        <li>Check that your payment information is correct</li>
+        <li>Contact your bank or card issuer to resolve any issues</li>
+        <li>Update your payment method and try again</li>
+    </ol>
+    
+    <p>You can update your payment information by <a th:href="${baseUrl} + '/orders/' + ${order.id} + '/payment'" class="button">clicking here</a>.</p>
+    
+    <p>If you believe this is a mistake or need assistance, please contact our customer service team at 
+    <a th:href="'mailto:' + ${@environment.getProperty('app.email.support')}" th:text="${@environment.getProperty('app.email.support')}">support@healthstore.com</a> 
+    or call us at <span th:text="${@environment.getProperty('app.phone.support')}">1-800-123-4567</span>.</p>
+    
+    <p>Please note that your order will be held for 7 days. If payment is not received within this time, your order may be cancelled.</p>
+    
+    <p>We appreciate your business and are here to help resolve any issues.</p>
+    
+    <p>Best regards,<br>The Health Store Team</p>
+</th:block>

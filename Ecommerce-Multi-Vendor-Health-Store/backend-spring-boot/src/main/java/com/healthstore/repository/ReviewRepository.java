@@ -42,4 +42,19 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Object[]> countReviewsByRating(@Param("productId") Long productId);
     
     boolean existsByProductIdAndUserId(Long productId, Long userId);
+    
+    /**
+     * Find reviews by product ID (without pagination)
+     */
+    List<Review> findByProductId(Long productId);
+    
+    /**
+     * Find a review by product ID and user ID
+     */
+    Optional<Review> findByProductIdAndUserId(Long productId, Long userId);
+    
+    /**
+     * Delete a review by product ID and user ID
+     */
+    int deleteByProductIdAndUserId(Long productId, Long userId);
 }

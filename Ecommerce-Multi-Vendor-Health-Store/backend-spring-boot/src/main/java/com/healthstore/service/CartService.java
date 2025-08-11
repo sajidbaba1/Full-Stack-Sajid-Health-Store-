@@ -149,4 +149,33 @@ public class CartService {
         cart.getItems().clear();
         return cartRepository.save(cart);
     }
+
+    /**
+     * Saves a cart to the database.
+     * @param cart The cart to save.
+     * @return The saved cart.
+     */
+    public Cart save(Cart cart) {
+        return cartRepository.save(cart);
+    }
+
+    /**
+     * Alias for getUserCart method to maintain compatibility.
+     * @param user The user whose cart to retrieve.
+     * @return The user's cart.
+     */
+    @Transactional(readOnly = true)
+    public Cart getCartByUser(User user) {
+        return getUserCart(user);
+    }
+
+    /**
+     * Alias for removeItemFromCart method to maintain compatibility.
+     * @param user The user whose cart to modify.
+     * @param productId The ID of the product to remove.
+     * @return The updated cart.
+     */
+    public Cart removeProductFromCart(User user, Long productId) {
+        return removeItemFromCart(user, productId);
+    }
 }

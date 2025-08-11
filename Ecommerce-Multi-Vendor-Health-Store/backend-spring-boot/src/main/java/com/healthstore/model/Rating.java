@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Min;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
 
 /**
  * The Rating entity represents a user's rating of a product.
@@ -29,9 +30,64 @@ public class Rating {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
+    @NotAudited
     private Product product;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @NotAudited
     private User user;
+
+    /**
+     * Gets the rating value.
+     * This is an alias for getValue() to maintain compatibility with existing code.
+     * @return The rating value.
+     */
+    @Transient
+    public int getRatingValue() {
+        return value;
+    }
+
+    /**
+     * Sets the rating value.
+     * This is an alias for setValue() to maintain compatibility with existing code.
+     * @param ratingValue The rating value.
+     */
+    @Transient
+    public void setRatingValue(int ratingValue) {
+        this.value = ratingValue;
+    }
+
+    // Manual getter and setter methods to ensure compilation works when Lombok fails
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Product getProduct() {
+        return product;
+    }
+
+    public void setProduct(Product product) {
+        this.product = product;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public int getValue() {
+        return value;
+    }
+
+    public void setValue(int value) {
+        this.value = value;
+    }
 }

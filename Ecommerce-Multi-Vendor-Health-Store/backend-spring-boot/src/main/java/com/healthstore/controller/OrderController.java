@@ -6,6 +6,7 @@ import com.healthstore.model.Address;
 import com.healthstore.service.OrderService;
 import com.healthstore.service.UserService;
 import com.healthstore.service.AddressService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -29,9 +30,10 @@ public class OrderController {
     private final UserService userService;
     private final AddressService addressService;
 
+    @Autowired
     public OrderController(OrderService orderService, 
-                          UserService userService,
-                          AddressService addressService) {
+                           UserService userService,
+                           AddressService addressService) {
         this.orderService = orderService;
         this.userService = userService;
         this.addressService = addressService;
@@ -76,7 +78,7 @@ public class OrderController {
         User user = userService.findUserByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
                 
-        List<Order> orders = orderService.getUserOrders(user);
+        List<Order> orders = orderService.getUserOrders(user).getContent();
         return new ResponseEntity<>(orders, HttpStatus.OK);
     }
 

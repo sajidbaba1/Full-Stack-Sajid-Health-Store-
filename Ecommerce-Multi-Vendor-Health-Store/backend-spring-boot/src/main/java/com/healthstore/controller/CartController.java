@@ -47,16 +47,17 @@ public class CartController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         
-        return userService.findUserByEmail(userDetails.getUsername())
-                .map(user -> {
-                    try {
-                        Cart updatedCart = cartService.addProductToCart(user, productId, quantity);
-                        return new ResponseEntity<>(updatedCart, HttpStatus.OK);
-                    } catch (RuntimeException e) {
-                        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-                    }
-                })
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        Optional<User> userOpt = userService.findByEmail(userDetails.getUsername());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        
+        try {
+            Cart updatedCart = cartService.addProductToCart(userOpt.get(), productId, quantity);
+            return ResponseEntity.ok(updatedCart);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     /**
@@ -67,16 +68,17 @@ public class CartController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<Cart> getCart(@AuthenticationPrincipal UserDetails userDetails) {
-        return userService.findUserByEmail(userDetails.getUsername())
-                .map(user -> {
-                    try {
-                        Cart cart = cartService.getUserCart(user);
-                        return new ResponseEntity<>(cart, HttpStatus.OK);
-                    } catch (RuntimeException e) {
-                        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-                    }
-                })
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        Optional<User> userOpt = userService.findByEmail(userDetails.getUsername());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        
+        try {
+            Cart cart = cartService.getCartByUser(userOpt.get());
+            return ResponseEntity.ok(cart);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     /**
@@ -97,16 +99,17 @@ public class CartController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         
-        return userService.findUserByEmail(userDetails.getUsername())
-                .map(user -> {
-                    try {
-                        Cart updatedCart = cartService.updateCartItemQuantity(user, productId, quantity);
-                        return new ResponseEntity<>(updatedCart, HttpStatus.OK);
-                    } catch (RuntimeException e) {
-                        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-                    }
-                })
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        Optional<User> userOpt = userService.findByEmail(userDetails.getUsername());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        
+        try {
+            Cart updatedCart = cartService.updateCartItemQuantity(userOpt.get(), productId, quantity);
+            return ResponseEntity.ok(updatedCart);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     /**
@@ -120,17 +123,18 @@ public class CartController {
     public ResponseEntity<Cart> removeFromCart(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long productId) {
-            
-        return userService.findUserByEmail(userDetails.getUsername())
-                .map(user -> {
-                    try {
-                        Cart updatedCart = cartService.removeItemFromCart(user, productId);
-                        return new ResponseEntity<>(updatedCart, HttpStatus.OK);
-                    } catch (RuntimeException e) {
-                        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-                    }
-                })
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        
+        Optional<User> userOpt = userService.findByEmail(userDetails.getUsername());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        
+        try {
+            Cart updatedCart = cartService.removeProductFromCart(userOpt.get(), productId);
+            return ResponseEntity.ok(updatedCart);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     /**
@@ -141,15 +145,16 @@ public class CartController {
     @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/clear")
     public ResponseEntity<Cart> clearCart(@AuthenticationPrincipal UserDetails userDetails) {
-        return userService.findUserByEmail(userDetails.getUsername())
-                .map(user -> {
-                    try {
-                        Cart clearedCart = cartService.clearCart(user);
-                        return new ResponseEntity<>(clearedCart, HttpStatus.OK);
-                    } catch (RuntimeException e) {
-                        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-                    }
-                })
-                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        Optional<User> userOpt = userService.findByEmail(userDetails.getUsername());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        
+        try {
+            Cart clearedCart = cartService.clearCart(userOpt.get());
+            return ResponseEntity.ok(clearedCart);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{email/base-email}">
+
+<th:block layout:fragment="email-content">
+    <p>Hello <span th:text="${order.user.fullName}">Customer</span>,</p>
+    
+    <p>Great news! Your order <strong th:text="${order.orderNumber}">#12345</strong> has been shipped and is on its way to you.</p>
+    
+    <h2>Shipping Information</h2>
+    <p><strong>Order Number:</strong> <span th:text="${order.orderNumber}">#12345</span></p>
+    <p><strong>Shipped On:</strong> <span th:text="${#temporals.format(order.shippedDate, 'MMMM d, yyyy')}">January 1, 2025</span></p>
+    <p th:if="${order.trackingNumber != null}">
+        <strong>Tracking Number:</strong> 
+        <a th:href="${'https://tools.usps.com/go/TrackConfirmAction?tLabels=' + order.trackingNumber}">
+            <span th:text="${order.trackingNumber}">1Z999AA1234567890</span>
+        </a>
+    </p>
+    
+    <h3>Delivery Address</h3>
+    <p th:if="${order.shippingAddress != null}">
+        <span th:text="${order.shippingAddress.recipientName}">Recipient Name</span><br>
+        <span th:text="${order.shippingAddress.street}">123 Main St</span><br>
+        <span th:if="${order.shippingAddress.street2 != null}" th:text="${order.shippingAddress.street2}">Apt 4B</span>
+        <span th:if="${order.shippingAddress.street2 != null}"><br></span>
+        <span th:text="${order.shippingAddress.city + ', ' + order.shippingAddress.state + ' ' + order.shippingAddress.postalCode}">
+            City, State 12345
+        </span><br>
+        <span th:text="${order.shippingAddress.country}">Country</span>
+    </p>
+    
+    <h3>Order Summary</h3>
+    <p><strong>Items:</strong> <span th:text="${itemCount} + (itemCount == 1 ? ' item' : ' items')">1 item</span></p>
+    <p><strong>Order Total:</strong> <span th:text="${formattedTotal}">$0.00</span></p>
+    
+    <p>You can track your package by <a th:href="${baseUrl} + '/orders/' + ${order.id}" class="button">clicking here</a>.</p>
+    
+    <p>If you have any questions about your shipment, please don't hesitate to contact our customer service team at 
+    <a th:href="'mailto:' + ${@environment.getProperty('app.email.support')}" th:text="${@environment.getProperty('app.email.support')}">support@healthstore.com</a>.</p>
+    
+    <p>Thank you for shopping with us!</p>
+    
+    <p>Best regards,<br>The Health Store Team</p>
+</th:block>

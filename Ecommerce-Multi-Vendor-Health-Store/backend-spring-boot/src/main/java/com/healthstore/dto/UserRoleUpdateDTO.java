@@ -16,4 +16,13 @@ public class UserRoleUpdateDTO {
      */
     @NotBlank(message = "Role name is required")
     private String roleName;
+
+    // Manual getter and setter methods to ensure compilation works when Lombok fails
+    public String getRoleName() {
+        return roleName;
+    }
+
+    public void setRoleName(String roleName) {
+        this.roleName = roleName;
+    }
 }

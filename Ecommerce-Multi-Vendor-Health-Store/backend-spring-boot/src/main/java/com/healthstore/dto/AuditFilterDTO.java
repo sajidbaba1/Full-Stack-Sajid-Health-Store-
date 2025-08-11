@@ -38,4 +38,45 @@ public class AuditFilterDTO {
      * The end date for filtering revisions
      */
     private LocalDateTime endDate;
+
+    // Manual getter and setter methods to ensure compilation works when Lombok fails
+    public String getEntityName() {
+        return entityName;
+    }
+
+    public void setEntityName(String entityName) {
+        this.entityName = entityName;
+    }
+
+    public Long getEntityId() {
+        return entityId;
+    }
+
+    public void setEntityId(Long entityId) {
+        this.entityId = entityId;
+    }
+
+    public String getRevisionType() {
+        return revisionType;
+    }
+
+    public void setRevisionType(String revisionType) {
+        this.revisionType = revisionType;
+    }
+
+    public LocalDateTime getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDateTime startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDateTime getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDateTime endDate) {
+        this.endDate = endDate;
+    }
 }

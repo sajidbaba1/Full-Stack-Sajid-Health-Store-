@@ -4,14 +4,19 @@ import com.healthstore.model.Role;
 import com.healthstore.model.User;
 import com.healthstore.repository.RoleRepository;
 import com.healthstore.repository.UserRepository;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.healthstore.dto.PasswordUpdateDTO;
 import com.healthstore.dto.UserUpdateDTO;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Service class for handling user-related business logic.
@@ -180,5 +185,40 @@ public class UserService {
         user.setRoles(roles);
         
         return userRepository.save(user);
+    }
+    
+    /**
+     * Finds a user by their ID.
+     * @param id The ID of the user to find.
+     * @return An Optional containing the user if found, or empty if not found.
+     */
+    public Optional<User> getUserById(Long id) {
+        return userRepository.findById(id);
+    }
+    
+    /**
+     * Gets the currently authenticated user.
+     * @return The current user
+     * @throws RuntimeException if no user is authenticated
+     */
+    public User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || 
+            authentication instanceof AnonymousAuthenticationToken) {
+            throw new RuntimeException("No authenticated user found");
+        }
+        
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+    }
+    
+    /**
+     * Finds a user by their email address.
+     * @param email The email address to search for.
+     * @return An Optional containing the user if found, or empty if not found.
+     */
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 }

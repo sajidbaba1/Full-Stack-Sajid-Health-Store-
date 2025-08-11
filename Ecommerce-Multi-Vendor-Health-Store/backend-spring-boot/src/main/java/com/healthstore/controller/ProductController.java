@@ -44,7 +44,7 @@ public class ProductController {
     public ResponseEntity<Page<ProductResponseDTO>> getAllProducts(
             @PageableDefault(size = 10) Pageable pageable) {
         Page<Product> products = productService.getAllProducts(pageable);
-        Page<ProductResponseDTO> productDTOs = products.map(ProductResponseDTO::new);
+        Page<ProductResponseDTO> productDTOs = products.map(this::convertToProductResponseDTO);
         return new ResponseEntity<>(productDTOs, HttpStatus.OK);
     }
 
@@ -106,6 +106,8 @@ public class ProductController {
                 .collect(Collectors.toList());
         return new ResponseEntity<>(dtos, HttpStatus.OK);
     }
+    
+    @GetMapping("/advanced-search")
     public ResponseEntity<Page<ProductResponseDTO>> advancedSearch(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) BigDecimal minPrice,
@@ -129,7 +131,7 @@ public class ProductController {
         dto.setId(product.getId());
         dto.setName(product.getName());
         dto.setDescription(product.getDescription());
-        dto.setPrice(product.getPrice());
+        dto.setPrice(product.getPrice().doubleValue());
         dto.setStock(product.getStock());
         dto.setImageUrl(product.getImageUrl());
         

@@ -19,11 +19,14 @@ import java.util.stream.Collectors;
 @Service
 public class RecommendationService {
 
-    @Autowired
-    private OrderService orderService;
+    private final OrderService orderService;
+    private final ProductRepository productRepository;
 
     @Autowired
-    private ProductRepository productRepository;
+    public RecommendationService(OrderService orderService, ProductRepository productRepository) {
+        this.orderService = orderService;
+        this.productRepository = productRepository;
+    }
 
     public List<Product> getRecommendationsForUser(User user) {
         // Fetch the user's latest orders to determine their interests
@@ -40,8 +43,7 @@ public class RecommendationService {
         Set<Long> categoryIds = new HashSet<>();
         for (Order order : recentOrders) {
             for (OrderItem item : order.getOrderItems()) {
-                item.getProduct().getCategories().stream()
-                    .forEach(category -> categoryIds.add(category.getId()));
+                item.getProduct().getCategories().forEach(category -> categoryIds.add(category.getId()));
             }
         }
 
@@ -53,5 +55,4 @@ public class RecommendationService {
 
         return productRepository.findProductsByCategoriesAndNotInIds(categoryIds, purchasedProductIds, PageRequest.of(0, 10));
     }
-}
 }

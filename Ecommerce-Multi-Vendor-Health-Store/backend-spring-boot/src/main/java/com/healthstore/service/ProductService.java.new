@@ -1,0 +1,232 @@
+package com.healthstore.service;
+
+import com.healthstore.dto.ProductRequestDTO;
+import com.healthstore.exception.ResourceNotFoundException;
+import com.healthstore.model.*;
+import com.healthstore.repository.*;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+public class ProductService {
+
+    private final ProductRepository productRepository;
+    private final CategoryService categoryService;
+    private final ProductVariantRepository productVariantRepository;
+    private final VariantOptionRepository variantOptionRepository;
+
+    public ProductService(ProductRepository productRepository, 
+                         CategoryService categoryService,
+                         ProductVariantRepository productVariantRepository,
+                         VariantOptionRepository variantOptionRepository) {
+        this.productRepository = productRepository;
+        this.categoryService = categoryService;
+        this.productVariantRepository = productVariantRepository;
+        this.variantOptionRepository = variantOptionRepository;
+    }
+
+    @CacheEvict(value = "products", allEntries = true)
+    public Product createProduct(ProductRequestDTO productRequest) {
+        Product product = new Product();
+        product.setName(productRequest.getName());
+        product.setDescription(productRequest.getDescription());
+        product.setImageUrl(productRequest.getImageUrl());
+
+        // Set categories if provided
+        if (productRequest.getCategoryIds() != null && !productRequest.getCategoryIds().isEmpty()) {
+            Set<Category> categories = productRequest.getCategoryIds().stream()
+                    .map(categoryService::findById)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toSet());
+            product.setCategories(categories);
+        }
+
+        // Save product first to generate ID
+        Product savedProduct = productRepository.save(product);
+
+        // Process variants if any
+        if (productRequest.getVariants() != null && !productRequest.getVariants().isEmpty()) {
+            for (ProductVariant variant : productRequest.getVariants()) {
+                variant.setProduct(savedProduct);
+                ProductVariant savedVariant = productVariantRepository.save(variant);
+                
+                // Process variant options if any
+                if (variant.getOptions() != null) {
+                    for (VariantOption option : variant.getOptions()) {
+                        option.setProductVariant(savedVariant);
+                        variantOptionRepository.save(option);
+                    }
+                }
+                savedProduct.getVariants().add(savedVariant);
+            }
+        }
+
+        return productRepository.save(savedProduct);
+    }
+
+    @Cacheable(value = "products", key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort")
+    public Page<Product> getAllProducts(Pageable pageable) {
+        return productRepository.findAll(pageable);
+    }
+
+    public Page<Product> findWithFilters(SearchFilterDTO filters, Pageable pageable) {
+        return productRepository.findAll(ProductSpecification.filterBy(filters), pageable);
+    }
+
+    public Optional<Product> getProductById(Long id) {
+        return productRepository.findById(id);
+    }
+    
+    @CacheEvict(value = "products", allEntries = true)
+    public Product updateProduct(Long id, ProductRequestDTO productRequest) {
+        return productRepository.findById(id).map(existingProduct -> {
+            // Update basic product info
+            existingProduct.setName(productRequest.getName());
+            existingProduct.setDescription(productRequest.getDescription());
+            existingProduct.setImageUrl(productRequest.getImageUrl());
+
+            // Update categories if provided
+            if (productRequest.getCategoryIds() != null) {
+                Set<Category> categories = productRequest.getCategoryIds().stream()
+                        .map(categoryService::findById)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .collect(Collectors.toSet());
+                existingProduct.setCategories(categories);
+            }
+
+            // Process variants
+            if (productRequest.getVariants() != null) {
+                // Keep track of existing variant IDs to handle deletions
+                Set<Long> existingVariantIds = existingProduct.getVariants().stream()
+                        .map(ProductVariant::getId)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+
+                // Update or add variants
+                for (ProductVariant variant : productRequest.getVariants()) {
+                    if (variant.getId() != null) {
+                        // Update existing variant
+                        existingVariantIds.remove(variant.getId());
+                        updateVariant(variant);
+                    } else {
+                        // Add new variant
+                        variant.setProduct(existingProduct);
+                        ProductVariant savedVariant = productVariantRepository.save(variant);
+                        existingProduct.getVariants().add(savedVariant);
+                    }
+                }
+
+                // Remove variants that were not in the request
+                if (!existingVariantIds.isEmpty()) {
+                    List<ProductVariant> variantsToDelete = productVariantRepository.findAllById(existingVariantIds);
+                    productVariantRepository.deleteAll(variantsToDelete);
+                    existingProduct.getVariants().removeIf(v -> existingVariantIds.contains(v.getId()));
+                }
+            }
+
+            return productRepository.save(existingProduct);
+        }).orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+    }
+
+    private void updateVariant(ProductVariant updatedVariant) {
+        productVariantRepository.findById(updatedVariant.getId()).ifPresent(existingVariant -> {
+            existingVariant.setPrice(updatedVariant.getPrice());
+            existingVariant.setStockQuantity(updatedVariant.getStockQuantity());
+            existingVariant.setSku(updatedVariant.getSku());
+            
+            // Update variant options
+            if (updatedVariant.getOptions() != null) {
+                // Keep track of existing option IDs
+                Set<Long> existingOptionIds = existingVariant.getOptions().stream()
+                        .map(VariantOption::getId)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+                
+                // Update or add options
+                for (VariantOption option : updatedVariant.getOptions()) {
+                    if (option.getId() != null) {
+                        // Update existing option
+                        existingOptionIds.remove(option.getId());
+                        updateVariantOption(option);
+                    } else {
+                        // Add new option
+                        option.setProductVariant(existingVariant);
+                        variantOptionRepository.save(option);
+                    }
+                }
+                
+                // Remove options that were not in the request
+                if (!existingOptionIds.isEmpty()) {
+                    variantOptionRepository.deleteAllById(existingOptionIds);
+                }
+            }
+            
+            productVariantRepository.save(existingVariant);
+        });
+    }
+    
+    private void updateVariantOption(VariantOption updatedOption) {
+        variantOptionRepository.findById(updatedOption.getId()).ifPresent(existingOption -> {
+            existingOption.setOptionName(updatedOption.getOptionName());
+            existingOption.setOptionValue(updatedOption.getOptionValue());
+            variantOptionRepository.save(existingOption);
+        });
+    }
+
+    @CacheEvict(value = "products", allEntries = true)
+    public void deleteProduct(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+        
+        // Delete all variants and their options
+        for (ProductVariant variant : product.getVariants()) {
+            variantOptionRepository.deleteAll(variant.getOptions());
+            productVariantRepository.delete(variant);
+        }
+        
+        productRepository.delete(product);
+    }
+
+    public List<Product> searchProducts(String name, Long categoryId) {
+        if (name != null && categoryId != null) {
+            return productRepository.findByNameContainingIgnoreCaseAndCategoryId(name, categoryId);
+        } else if (name != null) {
+            return productRepository.findByNameContainingIgnoreCase(name);
+        } else if (categoryId != null) {
+            return productRepository.findByCategoryId(categoryId);
+        } else {
+            return productRepository.findAll();
+        }
+    }
+    
+    public Page<Product> searchProducts(String name, BigDecimal minPrice, BigDecimal maxPrice, 
+                                      Long categoryId, Pageable pageable) {
+        return productRepository.searchProducts(name, minPrice, maxPrice, categoryId, pageable);
+    }
+    
+    public List<Product> getFeaturedProducts() {
+        return productRepository.findTop10ByOrderByCreatedAtDesc();
+    }
+    
+    public Product save(Product product) {
+        return productRepository.save(product);
+    }
+    
+    public List<ProductVariant> getVariantsByProductId(Long productId) {
+        return productVariantRepository.findByProductId(productId);
+    }
+    
+    public Optional<ProductVariant> getVariantById(Long variantId) {
+        return productVariantRepository.findById(variantId);
+    }
+}

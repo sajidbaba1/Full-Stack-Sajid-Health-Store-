@@ -13,4 +13,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AuthResponse {
     private String jwt;
+
+    // Manual getter and setter methods to ensure compilation works when Lombok fails
+    public String getJwt() {
+        return jwt;
+    }
+
+    public void setJwt(String jwt) {
+        this.jwt = jwt;
+    }
 }

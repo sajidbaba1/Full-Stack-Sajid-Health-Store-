@@ -101,10 +101,10 @@ public class AddressService {
                     address.setPostalCode(updatedAddress.getPostalCode());
                     address.setCountry(updatedAddress.getCountry());
                     address.setPhoneNumber(updatedAddress.getPhoneNumber());
-                    address.setIsDefault(updatedAddress.getIsDefault());
+                    address.setDefault(updatedAddress.isDefault());
                     
                     // If this is set as default, unset any other default addresses for this user
-                    if (updatedAddress.getIsDefault()) {
+                    if (updatedAddress.isDefault()) {
                         addressRepository.unsetDefaultAddresses(address.getUser().getId(), addressId);
                     }
                     

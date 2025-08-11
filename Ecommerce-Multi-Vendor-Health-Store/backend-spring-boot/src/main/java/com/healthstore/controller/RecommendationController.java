@@ -51,9 +51,31 @@ public class RecommendationController {
         
         // Convert to DTOs
         List<ProductResponseDTO> responseDTOs = recommendedProducts.stream()
-                .map(ProductResponseDTO::new)
+                .map(this::convertToProductResponseDTO)
                 .collect(Collectors.toList());
         
         return ResponseEntity.ok(responseDTOs);
+    }
+    
+    /**
+     * Converts a Product entity to a ProductResponseDTO.
+     * @param product The product to convert.
+     * @return The converted ProductResponseDTO.
+     */
+    private ProductResponseDTO convertToProductResponseDTO(Product product) {
+        ProductResponseDTO dto = new ProductResponseDTO();
+        dto.setId(product.getId());
+        dto.setName(product.getName());
+        dto.setDescription(product.getDescription());
+        dto.setPrice(product.getPrice().doubleValue());
+        dto.setStock(product.getStock());
+        dto.setImageUrl(product.getImageUrl());
+        
+        if (product.getCategory() != null) {
+            dto.setCategoryId(product.getCategory().getId());
+            dto.setCategoryName(product.getCategory().getName());
+        }
+        
+        return dto;
     }
 }

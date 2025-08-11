@@ -1,15 +1,22 @@
 package com.healthstore.service;
 
+import com.healthstore.exception.InsufficientStockException;
+import com.healthstore.exception.ResourceNotFoundException;
 import com.healthstore.model.*;
 import com.healthstore.repository.OrderRepository;
+import com.healthstore.repository.ProductVariantRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Service class for handling Order-related business logic.
@@ -18,19 +25,28 @@ import java.util.UUID;
 @Transactional
 public class OrderService {
 
+    private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
+
     private final OrderRepository orderRepository;
     private final CartService cartService;
     private final ProductService productService;
     private final UserService userService;
+    private final InventoryService inventoryService;
+    private final ProductVariantRepository productVariantRepository;
 
+    @Autowired
     public OrderService(OrderRepository orderRepository, 
                        CartService cartService, 
                        ProductService productService,
-                       UserService userService) {
+                       UserService userService,
+                       InventoryService inventoryService,
+                       ProductVariantRepository productVariantRepository) {
         this.orderRepository = orderRepository;
         this.cartService = cartService;
         this.productService = productService;
         this.userService = userService;
+        this.inventoryService = inventoryService;
+        this.productVariantRepository = productVariantRepository;
     }
 
     /**
@@ -41,53 +57,84 @@ public class OrderService {
      * @return The newly created Order.
      * @throws RuntimeException if the cart is empty or the product stock is insufficient.
      */
+    /**
+     * Creates a new order from a user's cart with inventory validation.
+     * This method is transactional to ensure atomicity of the order creation process.
+     * @param user The user placing the order.
+     * @param shippingAddress The shipping address for the order.
+     * @return The newly created Order.
+     * @throws InsufficientStockException if any product variant is out of stock
+     * @throws ResourceNotFoundException if any resource is not found
+     */
     @Transactional
     public Order createOrderFromCart(User user, Address shippingAddress) {
         Cart cart = cartService.getUserCart(user);
 
         if (cart.getCartItems().isEmpty()) {
-            throw new RuntimeException("Cannot create an order from an empty cart.");
+            throw new IllegalArgumentException("Cannot create an order from an empty cart.");
         }
 
-        Order order = new Order();
-        order.setOrderNumber(generateOrderNumber());
-        order.setUser(user);
-        order.setOrderDate(LocalDateTime.now());
-        order.setStatus(Order.OrderStatus.PENDING);
-        order.setShippingAddress(shippingAddress);
-
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        
+        // First, validate all items are in stock
+        Map<Long, Integer> variantQuantities = new HashMap<>();
         for (CartItem cartItem : cart.getCartItems()) {
-            Product product = cartItem.getProduct();
-            int quantity = cartItem.getQuantity();
+            if (cartItem.getProductVariant() == null) {
+                throw new IllegalStateException("Cart item is missing product variant information");
+            }
+            variantQuantities.put(cartItem.getProductVariant().getId(), cartItem.getQuantity());
+        }
 
-            if (product.getStock() < quantity) {
-                throw new RuntimeException("Insufficient stock for product: " + product.getName());
+        try {
+            // Check if all items are in stock (throws InsufficientStockException if not)
+            if (!inventoryService.areAllInStock(variantQuantities)) {
+                throw new InsufficientStockException("One or more items are out of stock");
             }
 
-            // Update product stock
-            product.setStock(product.getStock() - quantity);
-            productService.save(product);
+            // Create the order
+            Order order = new Order();
+            order.setOrderNumber(generateOrderNumber());
+            order.setUser(user);
+            order.setOrderDate(LocalDateTime.now());
+            order.setStatus(Order.OrderStatus.PENDING);
+            order.setShippingAddress(shippingAddress);
 
-            OrderItem orderItem = new OrderItem();
-            orderItem.setOrder(order);
-            orderItem.setProduct(product);
-            orderItem.setQuantity(quantity);
-            orderItem.setPriceAtPurchase(product.getPrice());
-            orderItem.setFinalPrice(product.getPrice().multiply(BigDecimal.valueOf(quantity)));
+            BigDecimal totalAmount = BigDecimal.ZERO;
             
-            order.getOrderItems().add(orderItem);
-            totalAmount = totalAmount.add(orderItem.getFinalPrice());
+            // Process each cart item
+            for (CartItem cartItem : cart.getCartItems()) {
+                ProductVariant variant = productVariantRepository.findById(cartItem.getProductVariant().getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Product variant not found: " + cartItem.getProductVariant().getId()));
+                
+                int quantity = cartItem.getQuantity();
+                BigDecimal itemPrice = BigDecimal.valueOf(variant.getPrice());
+                BigDecimal itemTotal = itemPrice.multiply(BigDecimal.valueOf(quantity));
+
+                // Create order item
+                OrderItem orderItem = new OrderItem();
+                orderItem.setOrder(order);
+                orderItem.setProductVariant(variant);
+                orderItem.setQuantity(quantity);
+                orderItem.setPriceAtPurchase(itemPrice);
+                orderItem.setFinalPrice(itemTotal);
+                
+                order.getOrderItems().add(orderItem);
+                totalAmount = totalAmount.add(itemTotal);
+                
+                // Update inventory (will throw InsufficientStockException if stock is not available)
+                inventoryService.reduceStock(variant.getId(), quantity);
+            }
+
+            order.setTotalAmount(totalAmount);
+
+            // Clear the user's cart after successful order creation
+            cart.getCartItems().clear();
+            cartService.save(cart);
+
+            return orderRepository.save(order);
+            
+        } catch (Exception e) {
+            logger.error("Error creating order: " + e.getMessage(), e);
+            throw e;
         }
-
-        order.setTotalAmount(totalAmount);
-
-        // Clear the user's cart after creating the order
-        cart.getCartItems().clear();
-        cartService.save(cart);
-
-        return orderRepository.save(order);
     }
 
     /**
@@ -171,5 +218,74 @@ public class OrderService {
     @Transactional(readOnly = true)
     public Page<Order> findAllOrders(Pageable pageable) {
         return orderRepository.findAll(pageable);
+    }
+    
+    /**
+     * Updates the payment information for an order.
+     * This is typically called from a webhook when a payment status changes.
+     *
+     * @param orderId The ID of the order to update
+     * @param paymentIntentId The Stripe payment intent ID
+     * @param paymentStatus The current payment status
+     * @return The updated order
+     * @throws ResourceNotFoundException if the order is not found
+     */
+    @Transactional
+    public Order updateOrderPaymentInfo(Long orderId, String paymentIntentId, String paymentStatus) {
+        logger.info("Updating payment info for order {}: paymentIntentId={}, status={}", 
+                   orderId, paymentIntentId, paymentStatus);
+        
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+            
+        order.setPaymentIntentId(paymentIntentId);
+        order.setPaymentStatus(paymentStatus);
+        
+        // Update order status based on payment status
+        if ("paid".equalsIgnoreCase(paymentStatus)) {
+            order.setStatus(Order.OrderStatus.PAID);
+            order.setPaymentDate(LocalDateTime.now());
+        } else if ("unpaid".equalsIgnoreCase(paymentStatus)) {
+            order.setStatus(Order.OrderStatus.PENDING);
+        } else if ("refunded".equalsIgnoreCase(paymentStatus)) {
+            order.setStatus(Order.OrderStatus.REFUNDED);
+            order.setRefunded(true);
+            order.setRefundDate(LocalDateTime.now());
+        }
+        
+        return orderRepository.save(order);
+    }
+    
+    /**
+     * Finds an order by its ID.
+     * @param orderId The ID of the order to find.
+     * @return The order if found.
+     * @throws ResourceNotFoundException if the order is not found.
+     */
+    @Transactional(readOnly = true)
+    public Order findById(Long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+    }
+    
+    /**
+     * Gets orders for a user (alias for getOrdersByUser).
+     * @param user The user whose orders to retrieve.
+     * @return A page of orders.
+     */
+    @Transactional(readOnly = true)
+    public Page<Order> getUserOrders(User user) {
+        return orderRepository.findByUserId(user.getId(), Pageable.unpaged());
+    }
+    
+    /**
+     * Finds orders for a user with pagination (alias method).
+     * @param user The user whose orders to find.
+     * @param pageable The pagination information.
+     * @return A page of orders.
+     */
+    @Transactional(readOnly = true)
+    public Page<Order> findOrdersByUser(User user, Pageable pageable) {
+        return orderRepository.findByUserId(user.getId(), pageable);
     }
 }

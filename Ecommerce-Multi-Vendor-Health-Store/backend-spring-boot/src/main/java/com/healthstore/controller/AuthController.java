@@ -3,9 +3,9 @@ package com.healthstore.controller;
 import com.healthstore.dto.AuthRequest;
 import com.healthstore.dto.AuthResponse;
 import com.healthstore.model.User;
-import com.healthstore.service.CustomUserDetailsService;
-import com.healthstore.service.UserService;
+import com.healthstore.security.CustomUserDetailsService;
 import com.healthstore.util.JwtUtil;
+import com.healthstore.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -81,6 +81,9 @@ public class AuthController {
 
         final UserDetails userDetails = customUserDetailsService.loadUserByUsername(request.getEmail());
         final String jwt = jwtUtil.generateToken(userDetails);
-        return ResponseEntity.ok(new AuthResponse(jwt));
+        
+        AuthResponse response = new AuthResponse();
+        response.setJwt(jwt);
+        return ResponseEntity.ok(response);
     }
 }

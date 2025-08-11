@@ -17,5 +17,37 @@ public class SearchFilterDTO {
     private Double minPrice;
     private Double maxPrice;
     private List<Long> categoryIds;
-    // You can add more filters here as needed, e.g., brands, ratings, etc.
+    
+    // Manual getter methods to ensure compilation works
+    public String getKeyword() {
+        return keyword;
+    }
+    
+    public void setKeyword(String keyword) {
+        this.keyword = keyword;
+    }
+    
+    public Double getMinPrice() {
+        return minPrice;
+    }
+    
+    public void setMinPrice(Double minPrice) {
+        this.minPrice = minPrice;
+    }
+    
+    public Double getMaxPrice() {
+        return maxPrice;
+    }
+    
+    public void setMaxPrice(Double maxPrice) {
+        this.maxPrice = maxPrice;
+    }
+    
+    public List<Long> getCategoryIds() {
+        return categoryIds;
+    }
+    
+    public void setCategoryIds(List<Long> categoryIds) {
+        this.categoryIds = categoryIds;
+    }
 }

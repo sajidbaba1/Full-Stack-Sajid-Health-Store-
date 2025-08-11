@@ -4,12 +4,15 @@ import com.healthstore.dto.ProductDTO;
 import com.healthstore.model.Category;
 import com.healthstore.model.Product;
 import com.healthstore.repository.ProductRepository;
+import com.healthstore.specification.ProductSpecification;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.healthstore.dto.SearchFilterDTO;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,7 +29,12 @@ public class ProductService {
 
     @CacheEvict(value = "products", allEntries = true)
     public Product createProduct(ProductDTO productDTO) {
-        // ... existing logic
+        Product product = new Product();
+        product.setName(productDTO.getName());
+        product.setDescription(productDTO.getDescription());
+        product.setImageUrl(productDTO.getImageUrl());
+        product.setActive(true);
+        return productRepository.save(product);
     }
     
     @Cacheable(value = "products", key = "#pageable.pageNumber + '-' + #pageable.pageSize + '-' + #pageable.sort")
@@ -50,12 +58,20 @@ public class ProductService {
     
     @CacheEvict(value = "products", allEntries = true)
     public Product updateProduct(Long id, ProductDTO productDTO) {
-        // ... existing logic
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+        product.setName(productDTO.getName());
+        product.setDescription(productDTO.getDescription());
+        product.setImageUrl(productDTO.getImageUrl());
+        return productRepository.save(product);
     }
     
     @CacheEvict(value = "products", allEntries = true)
     public void deleteProduct(Long id) {
-        // ... existing logic
+        if (!productRepository.existsById(id)) {
+            throw new RuntimeException("Product not found with id: " + id);
+        }
+        productRepository.deleteById(id);
     }
     
     /**
@@ -81,7 +97,15 @@ public class ProductService {
      */
     public Page<Product> searchProducts(String name, BigDecimal minPrice, BigDecimal maxPrice, 
                                       Long categoryId, Pageable pageable) {
-        return productRepository.searchProducts(name, minPrice, maxPrice, categoryId, pageable);
+        return productRepository.searchProducts(name, categoryId, pageable);
+    }
+    
+    /**
+     * Advanced search with pagination and multiple filters (alias method)
+     */
+    public Page<Product> advancedSearch(String name, BigDecimal minPrice, BigDecimal maxPrice, 
+                                       Long categoryId, Pageable pageable) {
+        return searchProducts(name, minPrice, maxPrice, categoryId, pageable);
     }
     
     /**

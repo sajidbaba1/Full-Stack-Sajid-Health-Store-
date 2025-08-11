@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{email/base-email}">
+
+<th:block layout:fragment="email-content">
+    <p>Hello <span th:text="${order.user.fullName}">Customer</span>,</p>
+    
+    <p>We're pleased to inform you that we've received your payment for order <strong th:text="${order.orderNumber}">#12345</strong>. Your order is now being processed.</p>
+    
+    <h2>Payment Details</h2>
+    <p><strong>Order Number:</strong> <span th:text="${order.orderNumber}">#12345</span></p>
+    <p><strong>Payment Date:</strong> <span th:text="${#temporals.format(order.paymentDate, 'MMMM d, yyyy')}">January 1, 2025</span></p>
+    <p><strong>Amount Paid:</strong> <span th:text="${formattedTotal}">$0.00</span></p>
+    <p th:if="${order.paymentMethod != null}">
+        <strong>Payment Method:</strong> 
+        <span th:with="method=${#strings.capitalize(#strings.replace(order.paymentMethod, '_', ' '))}" 
+              th:text="${method}">Credit Card</span>
+    </p>
+    
+    <h3>Order Summary</h3>
+    <p><strong>Items:</strong> <span th:text="${itemCount} + (itemCount == 1 ? ' item' : ' items')">1 item</span></p>
+    <p><strong>Order Total:</strong> <span th:text="${formattedTotal}">$0.00</span></p>
+    
+    <p>You can track your order by <a th:href="${baseUrl} + '/orders/' + ${order.id}" class="button">clicking here</a>.</p>
+    
+    <p>If you have any questions about your payment or order, please don't hesitate to contact our customer service team at 
+    <a th:href="'mailto:' + ${@environment.getProperty('app.email.support')}" th:text="${@environment.getProperty('app.email.support')}">support@healthstore.com</a>.</p>
+    
+    <p>Thank you for your purchase!</p>
+    
+    <p>Best regards,<br>The Health Store Team</p>
+</th:block>

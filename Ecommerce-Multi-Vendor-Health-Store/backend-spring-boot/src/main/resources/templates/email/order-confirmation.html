@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{email/base-email}">
+
+<th:block layout:fragment="email-content">
+    <p>Hello <span th:text="${order.user.fullName}">Customer</span>,</p>
+    
+    <p>Thank you for your order! We've received it and are getting it ready to be shipped. We'll notify you when it's on its way.</p>
+    
+    <h2>Order Details</h2>
+    <p><strong>Order Number:</strong> <span th:text="${order.orderNumber}">#12345</span></p>
+    <p><strong>Order Date:</strong> <span th:text="${orderDate}">January 1, 2025</span></p>
+    <p><strong>Total:</strong> <span th:text="${formattedTotal}">$0.00</span></p>
+    
+    <h3>Items Ordered</h3>
+    <table class="order-details">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="item : ${order.orderItems}">
+                <td>
+                    <strong th:text="${item.product.name}">Product Name</strong><br>
+                    <small th:if="${item.variant != null}" th:text="${'Variant: ' + item.variant.name}">Variant</small>
+                </td>
+                <td th:text="${item.quantity}">1</td>
+                <td th:text="${#numbers.formatDecimal(item.unitPrice, 1, 2)}">0.00</td>
+                <td th:text="${#numbers.formatDecimal(item.unitPrice * item.quantity, 1, 2)}">0.00</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" style="text-align: right;"><strong>Subtotal:</strong></td>
+                <td th:text="${formattedTotal}">$0.00</td>
+            </tr>
+            <tr>
+                <td colspan="3" style="text-align: right;"><strong>Shipping:</strong></td>
+                <td th:text="${order.shippingCost != null ? #numbers.formatDecimal(order.shippingCost, 1, 2) : 'Free'}">$0.00</td>
+            </tr>
+            <tr>
+                <td colspan="3" style="text-align: right;"><strong>Total:</strong></td>
+                <td th:text="${formattedTotal}">$0.00</td>
+            </tr>
+        </tfoot>
+    </table>
+    
+    <h3>Shipping Address</h3>
+    <p th:if="${order.shippingAddress != null}">
+        <span th:text="${order.shippingAddress.recipientName}">Recipient Name</span><br>
+        <span th:text="${order.shippingAddress.street}">123 Main St</span><br>
+        <span th:if="${order.shippingAddress.street2 != null}" th:text="${order.shippingAddress.street2}">Apt 4B</span>
+        <span th:if="${order.shippingAddress.street2 != null}"><br></span>
+        <span th:text="${order.shippingAddress.city + ', ' + order.shippingAddress.state + ' ' + order.shippingAddress.postalCode}">
+            City, State 12345
+        </span><br>
+        <span th:text="${order.shippingAddress.country}">Country</span>
+    </p>
+    
+    <p>You can check the status of your order by <a th:href="${baseUrl} + '/orders/' + ${order.id}" class="button">clicking here</a>.</p>
+    
+    <p>If you have any questions about your order, please don't hesitate to contact our customer service team at <a th:href="'mailto:' + ${@environment.getProperty('app.email.support')}" th:text="${@environment.getProperty('app.email.support')}">support@healthstore.com</a>.</p>
+    
+    <p>Thank you for shopping with us!</p>
+    
+    <p>Best regards,<br>The Health Store Team</p>
+</th:block>

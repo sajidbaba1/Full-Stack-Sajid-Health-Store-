@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{email/base-email}">
+
+<th:block layout:fragment="email-content">
+    <p>Hello <span th:text="${order.user.fullName}">Customer</span>,</p>
+    
+    <p>We've processed your refund for order <strong th:text="${order.orderNumber}">#12345</strong>. The refund has been issued to your original payment method.</p>
+    
+    <h2>Refund Details</h2>
+    <p><strong>Order Number:</strong> <span th:text="${order.orderNumber}">#12345</span></p>
+    <p><strong>Refund Date:</strong> <span th:text="${#temporals.format(order.refundDate, 'MMMM d, yyyy')}">January 1, 2025</span></p>
+    <p><strong>Refund Amount:</strong> <span th:text="${refundAmount}">$0.00</span></p>
+    <p><strong>Refund Method:</strong> Refund to original payment method</p>
+    
+    <div th:if="${order.refundReason != null}">
+        <h3>Refund Reason</h3>
+        <p th:text="${order.refundReason}">Customer requested a refund</p>
+    </div>
+    
+    <h3>Refunded Items</h3>
+    <table class="order-details">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Refund Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="item : ${order.orderItems}">
+                <td>
+                    <strong th:text="${item.product.name}">Product Name</strong><br>
+                    <small th:if="${item.variant != null}" th:text="${'Variant: ' + item.variant.name}">Variant</small>
+                </td>
+                <td th:text="${item.quantity}">1</td>
+                <td th:text="${#numbers.formatDecimal(item.unitPrice * item.quantity, 1, 2)}">0.00</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="2" style="text-align: right;"><strong>Total Refund:</strong></td>
+                <td th:text="${refundAmount}">$0.00</td>
+            </tr>
+        </tfoot>
+    </table>
+    
+    <p><strong>Note:</strong> It may take 5-10 business days for the refund to appear in your account, depending on your bank or credit card company's processing time.</p>
+    
+    <p>If you have any questions about your refund, please don't hesitate to contact our customer service team at 
+    <a th:href="'mailto:' + ${@environment.getProperty('app.email.support')}" th:text="${@environment.getProperty('app.email.support')}">support@healthstore.com</a>.</p>
+    
+    <p>We're sorry to see you go, but we hope to serve you again in the future!</p>
+    
+    <p>Best regards,<br>The Health Store Team</p>
+</th:block>
